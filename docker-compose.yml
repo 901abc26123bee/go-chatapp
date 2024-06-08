@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    build:
+      context: deployment
+      dockerfile: ./dockerfile/postgres.Dockerfile
+    container_name: gsm_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gsm_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deployment/config/db:/docker-entrypoint-initdb.d/
+    # The line below will ensure SQL files are executed in alphabetical order
+    command: ["postgres", "-c", "log_statement=all"]
+  minio:
+    build:
+      context: deployment
+      dockerfile: ./dockerfile/minio.Dockerfile
+    container_name: gsm_minio
+    environment:
+      MINIO_ROOT_USER: miniouser
+      MINIO_ROOT_PASSWORD: miniosecret
+    ports:
+      - "9000:9000"
+      - "9001:9001" # for MinIO console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+# TODO: redis
+volumes:
+  postgres_data:
+  minio_data:
