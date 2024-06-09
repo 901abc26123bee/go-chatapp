@@ -72,6 +72,12 @@ Templates for nginx.config : [Example nginx configuration](http://nginx.org/en/d
 - [Socket. IO vs. WebSocket: Keys Differences](https://apidog.com/articles/socket-io-vs-websocket/)
 
 
+### Vscode
+[How To Re-add An Extension To The VSCode Sidebar/Activity Bar](https://stackoverflow.com/questions/71567229/how-to-re-add-an-extension-to-the-vscode-sidebar-activity-bar)
+[Customizing the Outline view](https://www.ibm.com/docs/en/wdfrhcw/1.4.0?topic=editing-customizing-outline-view)
+[Activity Bar](https://code.visualstudio.com/api/ux-guidelines/activity-bar)
+
+
 ### docker cmd
 ```sh
 docker build -t foo . && docker run -it foo

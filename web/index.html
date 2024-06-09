@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Socket.IO Example</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Service Example</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
 </head>
 <body>
-    <h1>Socket.IO Example</h1>
-    <input id="input" type="text">
-    <button onclick="sendMessage()">Send</button>
-    <div id="messages"></div>
-
     <button onclick="http_send()">Send</button>
     <div id="responseDiv" style="white-space: pre-wrap; margin-top: 10px;"></div>
+
+    <input id="input" type="text" />
+    <button onclick="websocket_send()">Send</button>
+    <div id="output"></div>
+
     <script>
         // account service
         function http_send() {
@@ -30,6 +30,32 @@
                 console.error('There was a problem with the fetch operation:', error);
                 document.getElementById('responseDiv').innerText = 'Error: ' + error.message;
             });
+        }
+
+        // realtime service
+        var socket = new WebSocket("ws://localhost:8081/realtime");
+
+        socket.onopen = function (event) {
+            console.log("WebSocket opened");
+        };
+
+        socket.onmessage = function (event) {
+            var output = document.getElementById("output");
+            output.innerHTML += "<p>" + event.data + "</p>";
+        };
+
+        socket.onclose = function (event) {
+            console.log("WebSocket closed");
+        };
+
+        function websocket_send() {
+            if (socket.readyState === WebSocket.OPEN) {
+                var input = document.getElementById("input").value;
+                socket.send(input);
+                document.getElementById("input").value = '';
+            } else {
+                console.error('WebSocket is not open.');
+            }
         }
     </script>
 </body>
