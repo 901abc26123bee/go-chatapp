@@ -20,10 +20,13 @@ COPY . ./
 # Build the Go binary
 RUN --mount=type=cache,target=/go/pkg \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -o ./account ./cmd/account/server.go
+    go build -o ./realtime ./cmd/realtime/server.go
 
 # Use a minimal Alpine image to run the Go binary
 FROM alpine:3.19
 
 # Copy the binary from the build stage
-COPY --from=compiler /gopath/src/account /go/bin/account
+COPY --from=compiler /gopath/src/realtime /go/bin/realtime
+
+# Set the entrypoint to the binary
+ENTRYPOINT ["/go/bin/realtime"]

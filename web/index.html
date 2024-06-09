@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Example</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Example</h1>
+    <input id="input" type="text">
+    <button onclick="sendMessage()">Send</button>
+    <div id="messages"></div>
+
+    <button onclick="http_send()">Send</button>
+    <div id="responseDiv" style="white-space: pre-wrap; margin-top: 10px;"></div>
+    <script>
+        // account service
+        function http_send() {
+            fetch('http://127.0.0.1:8080/test')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                document.getElementById('responseDiv').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                document.getElementById('responseDiv').innerText = 'Error: ' + error.message;
+            });
+        }
+    </script>
+</body>
+
+
+
+
+<!-- <input id="input" type="text" />
+<button onclick="websocket_send()">Send</button>
+<pre id="output"></pre>
+<button onclick="http_send()">Send</button>
+<div id="responseDiv" style="white-space: pre-wrap; margin-top: 10px;"></div>
+<script>
+    var input = document.getElementById("input");
+    var output = document.getElementById("output");
+    var socket = new WebSocket("ws://localhost:8081/echo");
+
+    socket.onopen = function () {
+        output.innerHTML += "Status: Connected\n";
+    };
+
+    socket.onmessage = function (e) {
+        output.innerHTML += "Server: " + e.data + "\n";
+    };
+
+    function websocket_send() {
+        socket.send(input.value);
+        input.value = "";
+    }
+
+</script>
+ -->

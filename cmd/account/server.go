@@ -1,7 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -9,12 +12,18 @@ func main() {
 	r := gin.Default()
 
 	// Define a route and handler function
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
+	r.GET("/test", func(c *gin.Context) {
+		// fix cors for local run, run with docker com-pose fixed in nginx
+		c.Header("Access-Control-Allow-Origin", "*") // Allow requests from any origin
+		c.Header("Access-Control-Allow-Methods", "GET") // Allow only GET method
+
+		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello, World!",
 		})
+
+		log.Println("ack")
 	})
 
 	// Run the Gin server
-	r.Run() // Default listens on :8080
+	r.Run(":8080")
 }
