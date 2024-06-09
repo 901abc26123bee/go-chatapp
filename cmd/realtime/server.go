@@ -1,66 +1,35 @@
 package main
 
 import (
-    "net/http"
+	"context"
+	"flag"
 
-    "github.com/gin-gonic/gin"
-    "github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
+	realtime_router "social-media-project/router/realtime"
 )
 
 var (
-    upgrader = websocket.Upgrader{
-        ReadBufferSize:  1024,
-        WriteBufferSize: 1024,
-        CheckOrigin: func(r *http.Request) bool {
-            return true // Allow all origins for simplicity, adjust as needed
-        },
-    }
+	sqlConfigPath string
+	port          string
 )
 
+func init() {
+	flag.StringVar(&sqlConfigPath, "sql", "", "sql config path")
+	flag.StringVar(&port, "port", ":8081", "service port")
+}
+
 func main() {
-    // Initialize Gin
-    r := gin.Default()
+    flag.Parse()
 
-    // Routes
-    r.GET("/realtime", corsMiddleware(), func(c *gin.Context) {
-        serveWs(c.Writer, c.Request)
-    })
+	// create gin router for realtime service.
+	router, err := realtime_router.NewRouter(context.Background(), realtime_router.RouterConfig{
+		SqlConfigPath: sqlConfigPath,
+	})
+	if err != nil {
+		log.Fatalf("Init account router error: %v", err)
+	}
 
-    // Start server
-    r.Run(":8081")
-}
-
-func corsMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        c.Writer.Header().Set("Access-Control-Allow-Headers", "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range")
-        c.Writer.Header().Set("Access-Control-Max-Age", "1728000")
-        if c.Request.Method == "OPTIONS" {
-            c.AbortWithStatus(http.StatusOK)
-            return
-        }
-        c.Next()
-    }
-}
-
-func serveWs(w http.ResponseWriter, r *http.Request) {
-    conn, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        return
-    }
-    defer conn.Close()
-
-    for {
-        // Read message from client
-        messageType, p, err := conn.ReadMessage()
-        if err != nil {
-            return
-        }
-
-        // Echo message back to client
-        if err := conn.WriteMessage(messageType, p); err != nil {
-            return
-        }
-    }
+	if err := router.Run(port); err != nil {
+		log.Fatalf("failed to start account server: %v", err)
+	}
 }

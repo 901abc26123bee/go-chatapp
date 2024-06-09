@@ -95,3 +95,12 @@ docker build -f ./deployment/dockerfile/account.Dockerfile . -t test_build_accou
 lsof -i tcp:3000
 netstat -vanp tcp | grep 3000
 ```
+
+[Is it possible to install Node.js on macOS High Sierra Version 10.13.6? This is the latest version my mid 2014 Macbook Pro can support](https://stackoverflow.com/questions/74709494/is-it-possible-to-install-node-js-on-macos-high-sierra-version-10-13-6-this-is)
+```sh
+# list node versions
+nvm ls-remote
+# install node
+nvm install v20.14.0
+nvm install v17.9.1
+```

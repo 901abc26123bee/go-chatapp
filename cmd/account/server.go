@@ -1,29 +1,36 @@
 package main
 
 import (
-	"net/http"
+	"context"
+	"flag"
 
-	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+
+	account_router "social-media-project/router/account"
 )
 
+var (
+	sqlConfigPath string
+	port          string
+)
+
+func init() {
+	flag.StringVar(&sqlConfigPath, "sql", "", "sql config path")
+	flag.StringVar(&port, "port", ":8080", "service port")
+}
+
 func main() {
-	// Create a Gin router
-	r := gin.Default()
+	flag.Parse()
 
-	// Define a route and handler function
-	r.GET("/test", func(c *gin.Context) {
-		// fix cors for local run, run with docker com-pose fixed in nginx
-		c.Header("Access-Control-Allow-Origin", "*") // Allow requests from any origin
-		c.Header("Access-Control-Allow-Methods", "GET") // Allow only GET method
-
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello, World!",
-		})
-
-		log.Println("ack")
+	// create gin router for realtime service.
+	router, err := account_router.NewRouter(context.Background(), account_router.RouterConfig{
+		SqlConfigPath: sqlConfigPath,
 	})
+	if err != nil {
+		log.Fatalf("Init account router error: %v", err)
+	}
 
-	// Run the Gin server
-	r.Run(":8080")
+	if err := router.Run(port); err != nil {
+		log.Fatalf("failed to start account server: %v", err)
+	}
 }
