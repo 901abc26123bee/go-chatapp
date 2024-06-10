@@ -5,7 +5,7 @@ import (
 	"flag"
 
 	log "github.com/sirupsen/logrus"
-	realtime_router "social-media-project/router/realtime"
+	realtime_router "gsm/router/realtime"
 )
 
 var (
@@ -19,7 +19,7 @@ func init() {
 }
 
 func main() {
-    flag.Parse()
+	flag.Parse()
 
 	// create gin router for realtime service.
 	router, err := realtime_router.NewRouter(context.Background(), realtime_router.RouterConfig{

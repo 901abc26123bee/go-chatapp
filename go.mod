@@ -1,4 +1,4 @@
-module social-media-project
+module gsm
 
 go 1.22.4
 

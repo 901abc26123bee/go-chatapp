@@ -8,8 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	realtime_service "social-media-project/api/realtime"
-	cors_middleware "social-media-project/middleware"
+	realtime_service "gsm/api/realtime"
+	cors_middleware "gsm/middleware"
 )
 
 // version of realtime server

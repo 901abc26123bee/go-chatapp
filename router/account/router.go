@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"path"
 
-	account_service "social-media-project/api/account"
-	cors_middleware "social-media-project/middleware"
+	account_service "gsm/api/account"
+	cors_middleware "gsm/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,7 +50,7 @@ func NewRouter(ctx context.Context, config RouterConfig) (*AccountRouter, error)
 	}
 
 	return &AccountRouter{
-		Engine: r,
+		Engine:  r,
 		service: accountController,
 	}, nil
 }

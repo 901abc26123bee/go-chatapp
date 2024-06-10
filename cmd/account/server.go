@@ -6,7 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	account_router "social-media-project/router/account"
+	account_router "gsm/router/account"
 )
 
 var (
