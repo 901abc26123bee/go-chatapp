@@ -11,17 +11,12 @@ import (
 // RealtimeController is the interface for realtime api
 type RealtimeController interface {
 	HandleWebsocketIO(*gin.Context)
-	Echo(*gin.Context)
 	ServeWebSocket() error
+	Echo(*gin.Context)
 }
 
 // realtimeController defines the implementation of RealtimeController interface
 type realtimeController struct {
-}
-
-// NewRealtimeController creates a new realtime service
-func NewRealtimeController(ctx context.Context) (RealtimeController, error) {
-	return &realtimeController{}, nil
 }
 
 var (
@@ -33,6 +28,11 @@ var (
 			},
 	}
 )
+
+// NewRealtimeController creates a new realtime service
+func NewRealtimeController(ctx context.Context) (RealtimeController, error) {
+	return &realtimeController{}, nil
+}
 
 func(impl *realtimeController) Echo(ctx *gin.Context) {
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)

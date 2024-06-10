@@ -44,8 +44,8 @@ func NewRouter(ctx context.Context, config RouterConfig) (*AccountRouter, error)
 		realtimeGroup.GET("/healthz", getHealthz)
 		{
 			realtimeGroup.GET("/user", accountController.GetUser)
-			realtimeGroup.POST("/user", accountController.CreateUser)
-			realtimeGroup.POST("/login", accountController.LoginWithEmailPassword)
+			realtimeGroup.POST("/user", accountController.Register)
+			realtimeGroup.POST("/login", accountController.Login)
 		}
 	}
 

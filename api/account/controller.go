@@ -9,9 +9,11 @@ import (
 
 // AccountController is the interface for account api
 type AccountController interface {
-	CreateUser(ctx *gin.Context)
+	Register(ctx *gin.Context)
+	Login(ctx *gin.Context)
+	Logout(ctx *gin.Context)
 	GetUser(ctx *gin.Context)
-	LoginWithEmailPassword(ctx *gin.Context)
+	GetUsers(ctx *gin.Context)
 }
 
 // accountController defines the implementation of AccountController interface
@@ -23,19 +25,31 @@ func NewAccountController(ctx context.Context) (AccountController, error) {
 	return &accountController{}, nil
 }
 
-func(impl *accountController) CreateUser(ctx *gin.Context) {
+func(impl *accountController) Register(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
-func(impl *accountController) LoginWithEmailPassword(ctx *gin.Context) {
+func(impl *accountController) Login(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+func(impl *accountController) Logout(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
 func(impl *accountController) GetUser(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Hello, World!",
+	})
+}
+
+func(impl *accountController) GetUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
