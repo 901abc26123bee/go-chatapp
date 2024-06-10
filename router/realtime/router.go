@@ -33,6 +33,9 @@ func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error
 		return nil, fmt.Errorf("failed to new realtime controller: %v", err)
 	}
 
+	// Start listening for incoming chat messages
+	go realtime_service.HandleMessages()
+
 	r := gin.Default()
 
 	// TODO: do not allow *
@@ -44,6 +47,7 @@ func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error
 		realtimeGroup.GET("/healthz", getHealthz)
 		{
 			realtimeGroup.GET("/echo", realtimeController.Echo)
+			realtimeGroup.GET("/ws", realtimeController.HandleWebsocketIO)
 		}
 	}
 

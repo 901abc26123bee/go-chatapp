@@ -3,6 +3,7 @@ package realtime_service
 import (
 	"context"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -56,17 +57,20 @@ func(impl *realtimeController) Echo(ctx *gin.Context) {
 }
 
 func(impl *realtimeController) HandleWebsocketIO(ctx *gin.Context) {
-	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
-	if err != nil {
-			return
-	}
-	defer conn.Close()
-
-	for {
-
-	}
+	handleConnections(ctx.Writer, ctx.Request)
 }
 
 func(impl *realtimeController) ServeWebSocket() error {
 	return nil
+}
+
+// Store connected clients
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan Message)
+var mutex = sync.Mutex{}
+
+// Define a message object
+type Message struct {
+	Username string `json:"username"`
+	Message  string `json:"message"`
 }

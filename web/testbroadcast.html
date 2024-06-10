@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+</head>
+<body>
+    <div>
+        <input id="username" type="text" placeholder="Enter your username">
+        <button onclick="joinChat()">Join Chat</button>
+    </div>
+    <div id="chat" style="display:none;">
+        <div id="messages"></div>
+        <input id="message" type="text" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let socket;
+        let username;
+
+        function joinChat() {
+            username = document.getElementById("username").value;
+            if (username === "") {
+                alert("Please enter a username");
+                return;
+            }
+            document.getElementById("chat").style.display = "block";
+            connect();
+        }
+
+        function connect() {
+            socket = new WebSocket("ws://localhost:8081/api/realtime/v1/ws");
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                const messageElem = document.createElement("div");
+                messageElem.innerText = message.username + ": " + message.message;
+                document.getElementById("messages").appendChild(messageElem);
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById("message");
+            const message = messageInput.value;
+            socket.send(JSON.stringify({username: username, message: message}));
+            messageInput.value = "";
+        }
+    </script>
+</body>
+</html>
