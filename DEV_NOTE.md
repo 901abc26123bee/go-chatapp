@@ -104,3 +104,6 @@ nvm ls-remote
 nvm install v20.14.0
 nvm install v17.9.1
 ```
+
+### Golang
+[Cannot do any go command anymore](https://stackoverflow.com/questions/60406755/cannot-do-any-go-command-anymore)

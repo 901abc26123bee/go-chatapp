@@ -10,6 +10,7 @@ import (
 
 	realtime_service "gsm/api/realtime"
 	cors_middleware "gsm/middleware"
+	gormpsql "gsm/pkg/orm/gorm"
 )
 
 // version of realtime server
@@ -28,7 +29,13 @@ type RealtimeRouter struct {
 
 // NewRouter initialize routing information with controllers.
 func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error) {
-	realtimeController, err := realtime_service.NewRealtimeController(ctx)
+	// initialize orm with config.
+	db, err := gormpsql.Initialize(config.SqlConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize db: %v", err)
+	}
+	
+	realtimeController, err := realtime_service.NewRealtimeController(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new realtime controller: %v", err)
 	}

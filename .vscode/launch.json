@@ -11,8 +11,8 @@
         "mode": "auto",
         "dlvFlags": ["--check-go-version=false"],
         "program": "${workspaceFolder}/cmd/account",
-        // "args": ["-sql", "",
-        //           "--port", ":8080"],
+        "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
+                  "--port", ":8080"],
     },
     {
       "name": "realtime",
@@ -21,6 +21,8 @@
       "mode": "auto",
       "dlvFlags": ["--check-go-version=false"],
       "program": "${workspaceFolder}/cmd/realtime",
+      "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
+      "--port", ":8081"],
     },
     {
         "name": "Unit Test",
