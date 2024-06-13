@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/gin-gonic/gin"
+
 	account_service "gsm/api/account"
 	cors_middleware "gsm/middleware"
-
-	"github.com/gin-gonic/gin"
+	gormpsql "gsm/pkg/orm/gorm"
 )
 
 // version of realtime server
@@ -18,6 +19,7 @@ const accountVersion = "v1"
 // RouterConfig defines configs for account router
 type RouterConfig struct {
 	SqlConfigPath string
+	DBKey string
 }
 
 // AccountRouter defines a gin engine for account router.
@@ -28,7 +30,13 @@ type AccountRouter struct {
 
 // NewRouter initialize routing information with controllers.
 func NewRouter(ctx context.Context, config RouterConfig) (*AccountRouter, error) {
-	accountController, err := account_service.NewAccountController(ctx)
+	// initialize orm with config.
+	db, err := gormpsql.InitializeWithEncryptedKey(config.SqlConfigPath, config.DBKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize db: %v", err)
+	}
+
+	accountController, err := account_service.NewAccountController(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new account controller: %v", err)
 	}

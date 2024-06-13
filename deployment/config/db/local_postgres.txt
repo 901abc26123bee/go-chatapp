@@ -1,0 +1,1 @@
+host=localhost user=postgres password=postgres dbname=gsm_dev port=5432 sslmode=disable TimeZone=UTC

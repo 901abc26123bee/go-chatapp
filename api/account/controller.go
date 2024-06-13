@@ -2,6 +2,7 @@ package account_service
 
 import (
 	"context"
+	"gsm/pkg/orm"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,10 +19,11 @@ type AccountController interface {
 
 // accountController defines the implementation of AccountController interface
 type accountController struct {
+	db orm.DB
 }
 
 // NewAccountController creates a new account service
-func NewAccountController(ctx context.Context) (AccountController, error) {
+func NewAccountController(ctx context.Context, db orm.DB) (AccountController, error) {
 	return &accountController{}, nil
 }
 

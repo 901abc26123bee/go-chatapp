@@ -7,6 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+
+	"gsm/pkg/orm"
 )
 
 // RealtimeController is the interface for realtime api
@@ -18,6 +20,7 @@ type RealtimeController interface {
 
 // realtimeController defines the implementation of RealtimeController interface
 type realtimeController struct {
+	db orm.DB
 }
 
 var (
@@ -31,8 +34,8 @@ var (
 )
 
 // NewRealtimeController creates a new realtime service
-func NewRealtimeController(ctx context.Context) (RealtimeController, error) {
-	return &realtimeController{}, nil
+func NewRealtimeController(ctx context.Context, db orm.DB) (RealtimeController, error) {
+	return &realtimeController{db: db}, nil
 }
 
 func(impl *realtimeController) Echo(ctx *gin.Context) {
