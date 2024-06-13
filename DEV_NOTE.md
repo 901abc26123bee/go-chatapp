@@ -29,8 +29,13 @@
 ### deploy
 [docker-compose up doesn't rebuild image although Dockerfile has changed](https://github.com/docker/compose/issues/1487)
 ```sh
-# chmod +x ./deploy.sh
-# ./deploy.sh
+
+## file not executable
+```sh
+chmod +x ./deploy.sh
+./deploy.sh
+```
+
 
 # docker-compose up in background
 docker-compose up -d

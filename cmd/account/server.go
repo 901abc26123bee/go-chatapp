@@ -11,7 +11,7 @@ import (
 
 var (
 	sqlConfigPath string
-	dbkey string
+	dbkey         string
 	port          string
 )
 
@@ -27,7 +27,7 @@ func main() {
 	// create gin router for realtime service.
 	router, err := account_router.NewRouter(context.Background(), account_router.RouterConfig{
 		SqlConfigPath: sqlConfigPath,
-		DBKey: dbkey,
+		DBKey:         dbkey,
 	})
 	if err != nil {
 		log.Fatalf("Init account router error: %v", err)

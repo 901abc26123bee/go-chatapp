@@ -24,34 +24,34 @@ type accountController struct {
 
 // NewAccountController creates a new account service
 func NewAccountController(ctx context.Context, db orm.DB) (AccountController, error) {
-	return &accountController{}, nil
+	return &accountController{db: db}, nil
 }
 
-func(impl *accountController) Register(ctx *gin.Context) {
+func (impl *accountController) Register(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
-func(impl *accountController) Login(ctx *gin.Context) {
+func (impl *accountController) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
-func(impl *accountController) Logout(ctx *gin.Context) {
+func (impl *accountController) Logout(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
-func(impl *accountController) GetUser(ctx *gin.Context) {
+func (impl *accountController) GetUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})
 }
 
-func(impl *accountController) GetUsers(ctx *gin.Context) {
+func (impl *accountController) GetUsers(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Hello, World!",
 	})

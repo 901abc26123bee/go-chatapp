@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-sh ./tools/test_be.sh -q
+sh ./tools/test_be.sh

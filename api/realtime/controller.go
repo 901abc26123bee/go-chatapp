@@ -25,11 +25,11 @@ type realtimeController struct {
 
 var (
 	upgrader = websocket.Upgrader{
-			ReadBufferSize:  1024,
-			WriteBufferSize: 1024,
-			CheckOrigin: func(r *http.Request) bool {
-					return true // Allow all origins for simplicity, adjust as needed
-			},
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true // Allow all origins for simplicity, adjust as needed
+		},
 	}
 )
 
@@ -38,32 +38,32 @@ func NewRealtimeController(ctx context.Context, db orm.DB) (RealtimeController, 
 	return &realtimeController{db: db}, nil
 }
 
-func(impl *realtimeController) Echo(ctx *gin.Context) {
+func (impl *realtimeController) Echo(ctx *gin.Context) {
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-			return
+		return
 	}
 	defer conn.Close()
 
 	for {
-			// Read message from client
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-					return
-			}
+		// Read message from client
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			return
+		}
 
-			// Echo message back to client
-			if err := conn.WriteMessage(messageType, p); err != nil {
-					return
-			}
+		// Echo message back to client
+		if err := conn.WriteMessage(messageType, p); err != nil {
+			return
+		}
 	}
 }
 
-func(impl *realtimeController) HandleWebsocketIO(ctx *gin.Context) {
+func (impl *realtimeController) HandleWebsocketIO(ctx *gin.Context) {
 	handleConnections(ctx.Writer, ctx.Request)
 }
 
-func(impl *realtimeController) ServeWebSocket() error {
+func (impl *realtimeController) ServeWebSocket() error {
 	return nil
 }
 

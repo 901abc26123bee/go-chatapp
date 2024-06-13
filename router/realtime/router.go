@@ -34,7 +34,7 @@ func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize db: %v", err)
 	}
-	
+
 	realtimeController, err := realtime_service.NewRealtimeController(ctx, db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new realtime controller: %v", err)

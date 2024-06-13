@@ -19,7 +19,7 @@ const accountVersion = "v1"
 // RouterConfig defines configs for account router
 type RouterConfig struct {
 	SqlConfigPath string
-	DBKey string
+	DBKey         string
 }
 
 // AccountRouter defines a gin engine for account router.

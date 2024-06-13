@@ -4,8 +4,9 @@ import (
 	"context"
 	"flag"
 
-	log "github.com/sirupsen/logrus"
 	realtime_router "gsm/router/realtime"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (

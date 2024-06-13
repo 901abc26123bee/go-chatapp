@@ -144,4 +144,3 @@ func (a *adapter) Transaction(fc func(tx orm.DB) error) error {
 func (a *adapter) Debug() orm.DB {
 	return &adapter{db: a.db.Debug(), key: a.key}
 }
-
