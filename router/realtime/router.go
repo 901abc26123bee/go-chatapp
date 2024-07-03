@@ -9,7 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	realtime_service "gsm/api/realtime"
-	cors_middleware "gsm/middleware"
+	cors_middleware "gsm/middleware/cors"
+	errors_middleware "gsm/middleware/errors"
+	timeout_middleware "gsm/middleware/timeout"
 	gormpsql "gsm/pkg/orm/gorm"
 )
 
@@ -47,9 +49,11 @@ func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error
 
 	// TODO: do not allow *
 	corsHandler := cors_middleware.CorsHandler("*")
+	errorHandler := errors_middleware.ErrorHandler()
+	timeoutHandler := timeout_middleware.RequestTimeoutHandler()
 
 	realtimeGroup := r.Group(path.Join("/api/realtime", realtimeVersion))
-	realtimeGroup.Use(corsHandler)
+	realtimeGroup.Use(corsHandler, errorHandler, timeoutHandler)
 	{
 		realtimeGroup.GET("/healthz", getHealthz)
 		{

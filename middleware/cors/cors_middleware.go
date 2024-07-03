@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CorsHandler allows given origin to access the route.
+// CorsHandler is a gin middleware which allows given origin to access the route.
 func CorsHandler(allowOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", allowOrigin)

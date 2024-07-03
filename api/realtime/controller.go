@@ -63,6 +63,7 @@ func (impl *realtimeController) HandleWebsocketIO(ctx *gin.Context) {
 	handleConnections(ctx.Writer, ctx.Request)
 }
 
+// ServeWebSocket serve websocket response
 func (impl *realtimeController) ServeWebSocket() error {
 	return nil
 }
@@ -74,6 +75,7 @@ var mutex = sync.Mutex{}
 
 // Define a message object
 type Message struct {
+	RoomID   string `json:"room_id"`
 	Username string `json:"username"`
 	Message  string `json:"message"`
 }
