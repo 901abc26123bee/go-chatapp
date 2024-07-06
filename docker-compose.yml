@@ -17,6 +17,17 @@ services:
       - ./deployment/config/db:/docker-entrypoint-initdb.d/
     # The line below will ensure SQL files are executed in alphabetical order
     command: ["postgres", "-c", "log_statement=all"]
+  redis:
+    build:
+      context: .
+      dockerfile: ./deployment/dockerfile/redis.Dockerfile
+    container_name: gsm_redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+      - ./deployment/config/redis/init.config:/usr/local/etc/redis/init.conf
+    command: redis-server /usr/local/etc/redis/init.conf
   # minio:
   #   build:
   #     context: .
@@ -66,4 +77,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   # minio_data:

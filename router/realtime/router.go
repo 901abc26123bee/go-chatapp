@@ -12,6 +12,7 @@ import (
 	cors_middleware "gsm/middleware/cors"
 	errors_middleware "gsm/middleware/errors"
 	timeout_middleware "gsm/middleware/timeout"
+	rediscache "gsm/pkg/cache/redis"
 	gormpsql "gsm/pkg/orm/gorm"
 )
 
@@ -20,7 +21,8 @@ const realtimeVersion = "v1"
 
 // RouterConfig defines configs for dataset router
 type RouterConfig struct {
-	SqlConfigPath string
+	SqlConfigPath   string
+	RedisConfigPath string
 }
 
 // RealtimeRouter defines a gin engine for realtime router.
@@ -37,7 +39,12 @@ func NewRouter(ctx context.Context, config RouterConfig) (*RealtimeRouter, error
 		return nil, fmt.Errorf("failed to initialize db: %v", err)
 	}
 
-	realtimeController, err := realtime_service.NewRealtimeController(ctx, db)
+	redisClient, err := rediscache.InitializeRedis(config.RedisConfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize redis: %v", err)
+	}
+
+	realtimeController, err := realtime_service.NewRealtimeController(ctx, db, redisClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new realtime controller: %v", err)
 	}

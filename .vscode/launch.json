@@ -22,7 +22,8 @@
       "dlvFlags": ["--check-go-version=false"],
       "program": "${workspaceFolder}/cmd/realtime",
       "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
-      "--port", ":8081"],
+                "-redis", "${workspaceFolder}/deployment/config/redis/local_redis.txt",
+                "--port", ":8081"],
     },
     {
       "name": "Unit Test",

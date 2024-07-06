@@ -3,11 +3,11 @@ package realtime_service
 import (
 	"context"
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 
+	"gsm/pkg/cache"
 	"gsm/pkg/orm"
 )
 
@@ -20,7 +20,8 @@ type RealtimeController interface {
 
 // realtimeController defines the implementation of RealtimeController interface
 type realtimeController struct {
-	db orm.DB
+	db    orm.DB
+	cache cache.Client
 }
 
 var (
@@ -34,8 +35,8 @@ var (
 )
 
 // NewRealtimeController creates a new realtime service
-func NewRealtimeController(ctx context.Context, db orm.DB) (RealtimeController, error) {
-	return &realtimeController{db: db}, nil
+func NewRealtimeController(ctx context.Context, db orm.DB, cache cache.Client) (RealtimeController, error) {
+	return &realtimeController{db: db, cache: cache}, nil
 }
 
 func (impl *realtimeController) Echo(ctx *gin.Context) {
@@ -66,16 +67,4 @@ func (impl *realtimeController) HandleWebsocketIO(ctx *gin.Context) {
 // ServeWebSocket serve websocket response
 func (impl *realtimeController) ServeWebSocket() error {
 	return nil
-}
-
-// Store connected clients
-var clients = make(map[*websocket.Conn]bool)
-var broadcast = make(chan Message)
-var mutex = sync.Mutex{}
-
-// Define a message object
-type Message struct {
-	RoomID   string `json:"room_id"`
-	Username string `json:"username"`
-	Message  string `json:"message"`
 }

@@ -126,3 +126,8 @@ go get github.com/swaggo/swag
 ### swagger
 cd  doc/    
 swag init  -g ./api/account/controller.go  
+
+
+### redis
+redis-cli -a redispw ping
+redis-cli -h 127.0.0.1 -p 6379 -a redispw

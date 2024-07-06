@@ -3,7 +3,29 @@ package realtime_service
 import (
 	"fmt"
 	"net/http"
+	"sync"
+
+	"github.com/gorilla/websocket"
 )
+
+// Store connected clients
+var clients = make(map[*Client]bool)
+var broadcast = make(chan Message)
+var mutex = sync.Mutex{}
+
+// Client defines a websocket connection client
+type Client struct {
+	Conn   *websocket.Conn
+	UserID string
+}
+
+// Message Define a message object
+type Message struct {
+	RoomID   string `json:"room_id"`
+	UserID   string `json:"user_name"`
+	Username string `json:"username"`
+	Message  string `json:"message"`
+}
 
 func handleConnections(w http.ResponseWriter, r *http.Request) {
 	// Upgrade initial GET request to a WebSocket
@@ -16,7 +38,8 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 
 	// Register new client
 	mutex.Lock()
-	clients[ws] = true
+	client := &Client{Conn: ws}
+	clients[client] = true
 	mutex.Unlock()
 
 	// Listen for new messages from the client
@@ -26,7 +49,8 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Error reading message: %v\n", err)
 			mutex.Lock()
-			delete(clients, ws)
+			client := &Client{Conn: ws}
+			delete(clients, client)
 			mutex.Unlock()
 			break
 		}
@@ -42,10 +66,10 @@ func HandleMessages() {
 		// Send it to every connected client
 		mutex.Lock()
 		for client := range clients {
-			err := client.WriteJSON(msg)
+			err := client.Conn.WriteJSON(msg)
 			if err != nil {
 				fmt.Printf("Error writing message: %v\n", err)
-				client.Close()
+				client.Conn.Close()
 				delete(clients, client)
 			}
 		}
