@@ -112,3 +112,17 @@ nvm install v17.9.1
 
 ### Golang
 [Cannot do any go command anymore](https://stackoverflow.com/questions/60406755/cannot-do-any-go-command-anymore)
+
+
+[cmd/go: go mod download breaks on 1.21.0 due to empty GOPROXY](https://github.com/golang/go/issues/61928)
+```sh
+go env -w GOPROXY=https://proxy.golang.org,direct
+go env | grep GOPROXY
+go install github.com/swaggo/swag/cmd/swag@latest
+
+
+go get github.com/swaggo/swag  
+```
+### swagger
+cd  doc/    
+swag init  -g ./api/account/controller.go  
