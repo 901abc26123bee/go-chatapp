@@ -129,5 +129,11 @@ swag init  -g ./api/account/controller.go
 
 
 ### redis
+https://stackoverflow.com/questions/46569432/does-redis-use-a-username-for-authentication
 redis-cli -a redispw ping
 redis-cli -h 127.0.0.1 -p 6379 -a redispw
+
+redis-cli -h 127.0.0.1 -p 6379
+127.0.0.1:6379> AUTH redispw
+OK
+127.0.0.1:6379>

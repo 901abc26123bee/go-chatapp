@@ -1,4 +1,4 @@
-package errors_middleware
+package errors
 
 import (
 	"gsm/pkg/errors"

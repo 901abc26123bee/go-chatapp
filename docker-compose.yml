@@ -1,22 +1,22 @@
 version: '3.8'
 
 services:
-  postgres:
-    build:
-      context: .
-      dockerfile: ./deployment/dockerfile/postgres.Dockerfile
-    container_name: gsm_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gsm_dev
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./deployment/config/db:/docker-entrypoint-initdb.d/
-    # The line below will ensure SQL files are executed in alphabetical order
-    command: ["postgres", "-c", "log_statement=all"]
+  # postgres:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deployment/dockerfile/postgres.Dockerfile
+  #   container_name: gsm_postgres
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: gsm_dev
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./deployment/config/db:/docker-entrypoint-initdb.d/
+  #   # The line below will ensure SQL files are executed in alphabetical order
+  #   command: ["postgres", "-c", "log_statement=all"]
   redis:
     build:
       context: .
@@ -28,6 +28,18 @@ services:
       - redis_data:/data
       - ./deployment/config/redis/init.config:/usr/local/etc/redis/init.conf
     command: redis-server /usr/local/etc/redis/init.conf
+  # mongo:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deployment/dockerfile/mongodb.Dockerfile
+  #   container_name: gsm_mongo
+  #   ports:
+  #     - 27017:27017
+  #   volumes:
+  #     - mongo_data:/data/db
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: mongouser
+  #     MONGO_INITDB_ROOT_PASSWORD: mongopw
   # minio:
   #   build:
   #     context: .
@@ -76,6 +88,7 @@ services:
   #   command: ["/go/bin/realtime"]
 
 volumes:
-  postgres_data:
+  # postgres_data:
+  # mongo_data:
   redis_data:
   # minio_data:

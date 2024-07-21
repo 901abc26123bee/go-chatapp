@@ -1,4 +1,4 @@
-package cors_middleware
+package cors
 
 import (
 	"net/http"

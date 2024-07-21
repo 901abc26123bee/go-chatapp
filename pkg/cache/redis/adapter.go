@@ -31,3 +31,12 @@ func (a *adapter) Get(ctx context.Context, key string) (string, error) {
 func (a *adapter) Delete(ctx context.Context, key string) error {
 	return a.client.Del(ctx, key).Err()
 }
+
+func (a *adapter) Exist(ctx context.Context, key string) (bool, error) {
+	res := a.client.Exists(ctx, key)
+	return res.Val() > 0, res.Err()
+}
+
+func (a *adapter) Close(ctx context.Context, key string) error {
+	return a.client.Close()
+}

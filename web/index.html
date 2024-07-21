@@ -38,58 +38,23 @@
         }
 
         // realtime service
-        var socket = new WebSocket("ws://localhost:8081/api/realtime/v1/echo");
-
-        socket.onopen = function (event) {
-            console.log("WebSocket opened");
-        };
-
-        socket.onmessage = function (event) {
-            var output = document.getElementById("output");
-            output.innerHTML += "<p>" + event.data + "</p>";
-        };
-
-        socket.onclose = function (event) {
-            console.log("WebSocket closed");
-        };
-
-        function websocket_send() {
-            if (socket.readyState === WebSocket.OPEN) {
-                var input = document.getElementById("input").value;
-                socket.send(input);
-                document.getElementById("input").value = '';
-            } else {
-                console.error('WebSocket is not open.');
-            }
+        function http_send() {
+            fetch('http://localhost:8080/api/realtime/v1/healthz')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                document.getElementById('responseDiv').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('There was a problem with the fetch operation:', error);
+                document.getElementById('responseDiv').innerText = 'Error: ' + error.message;
+            });
         }
+
     </script>
 </body>
-
-
-
-
-<!-- <input id="input" type="text" />
-<button onclick="websocket_send()">Send</button>
-<pre id="output"></pre>
-<button onclick="http_send()">Send</button>
-<div id="responseDiv" style="white-space: pre-wrap; margin-top: 10px;"></div>
-<script>
-    var input = document.getElementById("input");
-    var output = document.getElementById("output");
-    var socket = new WebSocket("ws://localhost:8081/echo");
-
-    socket.onopen = function () {
-        output.innerHTML += "Status: Connected\n";
-    };
-
-    socket.onmessage = function (e) {
-        output.innerHTML += "Server: " + e.data + "\n";
-    };
-
-    function websocket_send() {
-        socket.send(input.value);
-        input.value = "";
-    }
-
-</script>
- -->

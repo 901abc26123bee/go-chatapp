@@ -12,6 +12,7 @@
         "dlvFlags": ["--check-go-version=false"],
         "program": "${workspaceFolder}/cmd/account",
         "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
+                  "-redis", "${workspaceFolder}/deployment/config/redis/local_redis.txt",
                   "--port", ":8080"],
     },
     {

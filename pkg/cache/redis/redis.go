@@ -10,16 +10,23 @@ import (
 )
 
 // InitializeRedis initial redis client
-func InitializeRedis(redisConfigPath string) (cache.Client, error) {
+func InitializeRedis(redisConfigPath string) (*redis.Client, error) {
 	redisConfig, err := os.ReadFile(redisConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get db config: %v", err.Error())
+		return nil, fmt.Errorf("failed to get redis config: %v", err.Error())
 	}
 	opts, err := redis.ParseURL(string(redisConfig))
+	opts.PoolSize = 10
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to init redis: %v", err.Error())
 	}
 
 	client := redis.NewClient(opts)
-	return Wrap(client), nil
+	return client, nil
+}
+
+// RedisWithCacheWrapper return redis client with cache interface
+func RedisWithCacheWrapper(client *redis.Client) cache.Client {
+	return Wrap(client)
 }

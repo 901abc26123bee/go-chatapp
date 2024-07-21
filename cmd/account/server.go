@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 
 	log "github.com/sirupsen/logrus"
@@ -10,14 +9,16 @@ import (
 )
 
 var (
-	sqlConfigPath string
-	dbkey         string
-	port          string
+	sqlConfigPath   string
+	dbkey           string
+	port            string
+	redisConfigPath string
 )
 
 func init() {
 	flag.StringVar(&sqlConfigPath, "sql", "", "sql config path")
 	flag.StringVar(&dbkey, "db-key", "", "da encrypted key")
+	flag.StringVar(&redisConfigPath, "redis", "", "redis config path")
 	flag.StringVar(&port, "port", ":8080", "service port")
 }
 
@@ -25,9 +26,10 @@ func main() {
 	flag.Parse()
 
 	// create gin router for realtime service.
-	router, err := account_router.NewRouter(context.Background(), account_router.RouterConfig{
-		SqlConfigPath: sqlConfigPath,
-		DBKey:         dbkey,
+	router, err := account_router.NewRouter(account_router.RouterConfig{
+		SqlConfigPath:   sqlConfigPath,
+		DBKey:           dbkey,
+		RedisConfigPath: redisConfigPath,
 	})
 	if err != nil {
 		log.Fatalf("Init account router error: %v", err)

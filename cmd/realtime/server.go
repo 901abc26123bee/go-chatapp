@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 
 	realtime_router "gsm/router/realtime"
@@ -25,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	// create gin router for realtime service.
-	router, err := realtime_router.NewRouter(context.Background(), realtime_router.RouterConfig{
+	router, err := realtime_router.NewRouter(realtime_router.RouterConfig{
 		SqlConfigPath:   sqlConfigPath,
 		RedisConfigPath: redisConfigPath,
 	})
