@@ -5,7 +5,7 @@ import (
 	"gsm/pkg/cache"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 )
 
 // adapter defines the implementation for gorm to implement DB interface.

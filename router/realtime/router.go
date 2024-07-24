@@ -12,6 +12,8 @@ import (
 	errors "gsm/middleware/errors"
 	timeout "gsm/middleware/timeout"
 	rediscache "gsm/pkg/cache/redis"
+	"gsm/pkg/stream/streamredis"
+	"gsm/pkg/util/sonyflake"
 
 	// gormpsql "gsm/pkg/orm/gorm"
 	realtimeutil "gsm/pkg/realtime"
@@ -46,8 +48,13 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 		return nil, fmt.Errorf("failed to initialize redis: %v", err)
 	}
 	cache := rediscache.RedisWithCacheWrapper(redisClient)
+	stream := streamredis.NewRedisMessageStreamClient(redisClient)
+	idGenerator, err := sonyflake.NewSonyFlake()
+	if err != nil {
+		return nil, fmt.Errorf("failed to  new SonyFlake: %v", err)
+	}
 
-	realtimeController, err := realtime.NewRealtimeController(cache)
+	realtimeController, err := realtime.NewRealtimeController(cache, stream, idGenerator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new realtime controller: %v", err)
 	}
@@ -67,11 +74,12 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	{
 		realtimeGroup.GET("/healthz", getHealthz)
 		{
-			realtimeGroup.GET("/ws", realtimeController.TestWebsocketIO)
-			realtimeGroup.GET("/connect", realtimeController.HandleWebSocketConnect)
+			realtimeGroup.GET("/ws", realtimeController.TestInMemoryWebsocketIO)
+			realtimeGroup.GET("/stream/chatroom", realtimeController.HandleWebSocketStreamConnect)
+
 			pushGroup := realtimeGroup.Group("/push")
 			{
-				pushGroup.GET("/message", realtimeController.HandleWebSocketConnect)
+				pushGroup.GET("/message", realtimeController.HandleWebSocketStreamConnect)
 			}
 		}
 	}

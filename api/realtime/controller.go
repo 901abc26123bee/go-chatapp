@@ -5,41 +5,47 @@ import (
 
 	"gsm/pkg/cache"
 	"gsm/pkg/realtime"
+	"gsm/pkg/stream"
+	"gsm/pkg/util/sonyflake"
 )
 
 // RealtimeController is the interface for realtime api
 type RealtimeController interface {
-	TestWebsocketIO(*gin.Context)
-	HandleWebSocketConnect(*gin.Context)
-	PushMessage(*gin.Context)
+	TestInMemoryWebsocketIO(*gin.Context)
+	HandleWebSocketStreamConnect(*gin.Context)
+	CreateChatRoom(*gin.Context)
 }
 
 // realtimeController defines the implementation of RealtimeController interface
 type realtimeController struct {
 	redisClient    cache.Client
+	streamClient   stream.Client
+	idGenerator    sonyflake.IDGenerator
 	connectService ConnectService
 	chatService    ChatService
 }
 
 // NewRealtimeController creates a new realtime controller
-func NewRealtimeController(redisClient cache.Client) (RealtimeController, error) {
+func NewRealtimeController(redisClient cache.Client, streamClient stream.Client, idGenerator sonyflake.IDGenerator) (RealtimeController, error) {
 	return &realtimeController{
 		redisClient:    redisClient,
-		connectService: NewConnectService(redisClient),
+		streamClient:   streamClient,
+		idGenerator:    idGenerator,
+		connectService: NewConnectService(redisClient, streamClient, idGenerator),
 		chatService:    NewChatService(redisClient),
 	}, nil
 }
 
-// HandleWebsocketIO handle socket io for client
-func (impl *realtimeController) TestWebsocketIO(ctx *gin.Context) {
+// TestInMemoryWebsocketIO test websocket io with in-serve memory
+func (impl *realtimeController) TestInMemoryWebsocketIO(ctx *gin.Context) {
 	realtime.ServeWS(ctx.Writer, ctx.Request)
 }
 
 // HandleWebsocketIO handle socket io for client
-func (impl *realtimeController) HandleWebSocketConnect(ctx *gin.Context) {
-	realtime.ServeWS(ctx.Writer, ctx.Request)
+func (impl *realtimeController) HandleWebSocketStreamConnect(ctx *gin.Context) {
+	impl.connectService.HandleWebSocketStreamConnect(ctx.Writer, ctx.Request)
 }
 
-func (impl *realtimeController) PushMessage(ctx *gin.Context) {
+func (impl *realtimeController) CreateChatRoom(ctx *gin.Context) {
 
 }

@@ -1,10 +1,11 @@
 package rediscache
 
 import (
+	"context"
 	"fmt"
 	"os"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 
 	"gsm/pkg/cache"
 )
@@ -23,6 +24,13 @@ func InitializeRedis(redisConfigPath string) (*redis.Client, error) {
 	}
 
 	client := redis.NewClient(opts)
+
+	// test the connection to ensure it works
+	_, err = client.Ping(context.Background()).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to redis: %v", err)
+	}
+
 	return client, nil
 }
 

@@ -137,3 +137,28 @@ redis-cli -h 127.0.0.1 -p 6379
 127.0.0.1:6379> AUTH redispw
 OK
 127.0.0.1:6379>
+
+redis-cli -u redis://redisuser:redispw@localhost:6379
+
+
+### redis stream
+
+In the XGroupCreateMkStream command, the $ symbol is used to specify the starting point for the consumer group. 
+$ Symbol in XGroupCreateMkStream
+```
+$: This indicates that the consumer group should start reading new messages added to the stream after the group is created. In other words, it will not read any historical messages that were already in the stream before the group was created. It only processes messages that are appended to the stream after the group has been set up.
+```
+Detailed Explanation
+```
+When you create a consumer group with XGroupCreateMkStream, you provide the stream name, group name, and a starting point (usually $ or 0). The starting point determines from where the consumer group will start processing messages:
+
+  $ (Dollar Sign): Start from new messages added to the stream after the group is created. This is commonly used when you want to process only new messages from that point onward, ignoring any messages that were already present in the stream.
+
+  0 (Zero): Start from the earliest message available in the stream. This is used if you want the consumer group to process all messages, including those that were already in the stream before the group was created.
+```
+
+
+
+ws://localhost:8081/api/realtime/v1/stream/chatroom?room-id="test"
+
+{"room_id":"test-stream-chatroom","user_id":"user_id","chat":"fdewfcewf"}

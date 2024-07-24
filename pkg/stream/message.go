@@ -1,4 +1,4 @@
-package messagebroker
+package stream
 
 import "context"
 
@@ -10,8 +10,8 @@ type Acker interface {
 
 // Message represents a Pub/Sub message.
 type Message struct {
-	Acker      Acker
-	ID         string
-	Data       []byte
+	Acker Acker
+	ID    string
+	// Data       []byte
 	Attributes map[string]interface{}
 }

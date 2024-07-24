@@ -1,4 +1,4 @@
-package messagebroker
+package stream
 
 import "context"
 
@@ -21,7 +21,7 @@ type Client interface {
 
 // SubscriptionConfig describes the configuration of a subscription.
 type SubscriptionConfig struct {
+	Topic       Topic
 	TopicID     string
-	ConsumerID  string
 	ReadStartID string
 }

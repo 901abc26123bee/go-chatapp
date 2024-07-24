@@ -2,10 +2,11 @@ package streamredis
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 
-	"gsm/pkg/messagebroker"
+	"gsm/pkg/stream"
 )
 
 type redisTopic struct {
@@ -15,9 +16,11 @@ type redisTopic struct {
 }
 
 func (t *redisTopic) Exists(ctx context.Context) (bool, error) {
-	_, err := t.client.XInfoStream(ctx, t.id).Result()
-	if err == redis.Nil {
-		// stream does not exist
+	// TODO: find a better way
+	res := t.client.XInfoStream(ctx, t.id)
+	err := res.Err()
+	errMsg := fmt.Sprintf("%v", err)
+	if errMsg == REDIS_ERROR_NO_SUCH_KEY {
 		return false, nil
 	} else if err != nil {
 		// some other error occurred
@@ -27,12 +30,12 @@ func (t *redisTopic) Exists(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (t *redisTopic) Publish(ctx context.Context, msg *messagebroker.Message) messagebroker.PublishResult {
+func (t *redisTopic) Send(ctx context.Context, msg *stream.Message) stream.PublishResult {
 	rArg := &redis.XAddArgs{
 		Stream: t.id,
 		MaxLen: t.maxLen,
 		ID:     msg.ID,
-		Values: msg.Data,
+		Values: msg.Attributes,
 	}
 	res := t.client.XAdd(ctx, rArg)
 	// TODO: check if exceed maxLen

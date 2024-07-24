@@ -27,7 +27,7 @@ services:
     volumes:
       - redis_data:/data
       - ./deployment/config/redis/init.config:/usr/local/etc/redis/init.conf
-    command: redis-server /usr/local/etc/redis/init.conf
+    command: ["redis-server", "/usr/local/etc/redis/init.conf"]
   # mongo:
   #   build:
   #     context: .

@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 
-	"gsm/pkg/messagebroker"
+	"gsm/pkg/stream"
 )
 
 type redisSubscription struct {
 	client      *redis.Client
 	xGroupID    string
 	topicID     string
-	consumerID  string
 	readStartID string
 }
 
 func (s *redisSubscription) Exists(ctx context.Context) (bool, error) {
+	// TODO: find a better way
 	_, err := s.client.XInfoGroups(ctx, s.xGroupID).Result()
-	if err == redis.Nil {
-		// stream does not exist
+	errMsg := fmt.Sprintf("%v", err)
+	if errMsg == REDIS_ERROR_NO_SUCH_KEY {
 		return false, nil
 	} else if err != nil {
 		// some other error occurred
@@ -31,12 +31,13 @@ func (s *redisSubscription) Exists(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context, *messagebroker.Message)) error {
+func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context, *stream.Message)) error {
 	rArg := &redis.XReadGroupArgs{
 		Group:    s.xGroupID,
-		Consumer: s.consumerID,
-		Streams:  []string{s.topicID},
-		Block:    300 * time.Second, // block for 5 min
+		Consumer: s.xGroupID,               // set consumer to group since each group will only consume by distinct member
+		Streams:  []string{s.topicID, ">"}, // only get messages that were added after the last acknowledgment or after the consumer group was created.
+		Count:    1,                        // reads one message at a time (Count: 1) to ensure strict sequential processing.
+		Block:    300 * time.Second,        // block for 5 min
 		NoAck:    false,
 	}
 
@@ -52,13 +53,12 @@ func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context,
 			xGroup:     s.xGroupID,
 			messageIDs: []string{},
 		}
-		for _, stream := range res {
-			for _, message := range stream.Messages {
+		for _, xStream := range res {
+			for _, message := range xStream.Messages {
 				acker.messageIDs = append(acker.messageIDs, message.ID)
-				msg := &messagebroker.Message{
+				msg := &stream.Message{
 					Acker:      acker,
 					ID:         message.ID,
-					Data:       []byte(fmt.Sprintf("%v", message.Values)),
 					Attributes: message.Values,
 				}
 				// handle and ack the message.
