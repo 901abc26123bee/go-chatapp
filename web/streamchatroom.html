@@ -46,6 +46,8 @@
         const joinButton = document.getElementById('joinButton');
         const sendButton = document.getElementById('sendButton');
         const statusDiv = document.getElementById('status');
+        let currentRoomId = '';
+        const userID = Math.random().toString(36).substring(2, 15); // Generate a unique user ID
 
         function updateStatus(status) {
             statusDiv.textContent = status;
@@ -59,8 +61,9 @@
 
             // clear the chat messages
             chatDiv.innerHTML = '';
+            currentRoomId = roomId; // store the current room ID
 
-            const url = `ws://localhost:8081/api/realtime/v1/stream/chatroom?room-id=${roomId}`;
+            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room-id=${roomId}`;
             ws = new WebSocket(url);
 
             ws.onopen = () => {
@@ -71,7 +74,7 @@
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data && data.chat) {
-                    chatDiv.innerHTML += `<p><strong>${data.userName}:</strong> ${data.chat}</p>`;
+                    chatDiv.innerHTML += `<p><strong>${data.user_name}:</strong> ${data.chat}</p>`;
                     chatDiv.scrollTop = chatDiv.scrollHeight;
                 }
             };
@@ -97,7 +100,11 @@
         sendButton.addEventListener('click', () => {
             const message = messageInput.value.trim();
             if (message && ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ chat: message }));
+                ws.send(JSON.stringify({ 
+                    user_id: userID,
+                    room_id: currentRoomId,
+                    chat: message 
+                }));
                 messageInput.value = '';
             }
         });

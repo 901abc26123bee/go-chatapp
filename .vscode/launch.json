@@ -13,6 +13,7 @@
         "program": "${workspaceFolder}/cmd/account",
         "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
                   "-redis", "${workspaceFolder}/deployment/config/redis/local_redis.txt",
+                  "--mongodb", "${workspaceFolder}/deployment/config/mongodb/local_mongo.txt",
                   "--port", ":8080"],
     },
     {

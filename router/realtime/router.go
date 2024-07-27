@@ -68,18 +68,16 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
+	r.Use(corsHandler, errorHandler, timeoutHandler)
 
 	realtimeGroup := r.Group(path.Join("/api/realtime", realtimeVersion))
-	realtimeGroup.Use(corsHandler, errorHandler, timeoutHandler)
 	{
 		realtimeGroup.GET("/healthz", getHealthz)
 		{
-			realtimeGroup.GET("/ws", realtimeController.TestInMemoryWebsocketIO)
-			realtimeGroup.GET("/stream/chatroom", realtimeController.HandleWebSocketStreamConnect)
-
-			pushGroup := realtimeGroup.Group("/push")
+			chatroomGroup := realtimeGroup.Group("/chatroom")
 			{
-				pushGroup.GET("/message", realtimeController.HandleWebSocketStreamConnect)
+				chatroomGroup.GET("/ws", realtimeController.HandleMemoryWebsocketIO)
+				chatroomGroup.GET("/stream", realtimeController.HandleWebSocketStreamConnect)
 			}
 		}
 	}

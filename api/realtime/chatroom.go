@@ -10,25 +10,25 @@ import (
 	"gsm/pkg/errors"
 )
 
-// chatService defines the implementation of ChatService interface
-type chatService struct {
+// streamChatService defines the implementation of ChatService interface
+type streamChatService struct {
 	redisClient cache.Client
 }
 
-// ChatService defines the chat service interface
-type ChatService interface {
+// StreamChatService defines the chat service interface
+type StreamChatService interface {
 	CreateChatRoom(ctx context.Context) error
 	QueryChatRoomHistory(ctx context.Context) error
 }
 
 // NewChatService init the chat service
-func NewChatService(redisClient cache.Client) ChatService {
-	return &chatService{
+func NewStreamChatService(redisClient cache.Client) StreamChatService {
+	return &streamChatService{
 		redisClient: redisClient,
 	}
 }
 
-func (impl *chatService) CreateChatRoom(ctx context.Context) error {
+func (impl *streamChatService) CreateChatRoom(ctx context.Context) error {
 	chatroomID := ulid.Make().String()
 	key := fmt.Sprintf("chatroom:%s", chatroomID)
 	// set expiration to 0 indicates the key will not expire
@@ -38,6 +38,6 @@ func (impl *chatService) CreateChatRoom(ctx context.Context) error {
 	return nil
 }
 
-func (impl *chatService) QueryChatRoomHistory(ctx context.Context) error {
+func (impl *streamChatService) QueryChatRoomHistory(ctx context.Context) error {
 	return nil
 }

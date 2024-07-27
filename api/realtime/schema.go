@@ -50,3 +50,30 @@ func (resp *StreamChatRoomResponse) convertRedisDataTo(attr map[string]interface
 
 	return nil
 }
+
+// StreamChatRoomMessage Define a chat room message object
+type StreamChatRoomMessage struct {
+	ID     string `json:"id"`
+	RoomID string `json:"room_id"`
+	UserID string `json:"user_id"`
+	Chat   string `json:"chat"`
+}
+
+func (msg *StreamChatRoomMessage) convertToKeyValuePair() map[string]interface{} {
+	return map[string]interface{}{
+		"id":      msg.ID,
+		"room_id": msg.RoomID,
+		"user_id": msg.UserID,
+		"chat":    msg.Chat,
+	}
+}
+
+// // Chat Define a chat object
+// type Chat struct {
+// 	ID        string `json:"id"`
+// 	From      string `json:"from"`
+// 	To        string `json:"to"`
+// 	Msg       string `json:"message"`
+// 	MsgType   string `json:"msg_type"`
+// 	Timestamp int64  `json:"timestamp"`
+// }

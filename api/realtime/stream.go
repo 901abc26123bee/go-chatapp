@@ -49,38 +49,7 @@ var (
 
 const wsTimeoutDuration = 300 * time.Second
 
-// ChatRoomMessage Define a chat room message object
-type ChatRoomMessage struct {
-	ID     string `json:"id"`
-	RoomID string `json:"room_id"`
-	UserID string `json:"user_id"`
-	Chat   string `json:"chat"`
-}
-
-func (msg *ChatRoomMessage) convertToKeyValuePair() map[string]interface{} {
-	return map[string]interface{}{
-		"id":      msg.ID,
-		"room_id": msg.RoomID,
-		"user_id": msg.UserID,
-		"chat":    msg.Chat,
-	}
-}
-
-// Chat Define a chat object
-type Chat struct {
-	ID        string `json:"id"`
-	From      string `json:"from"`
-	To        string `json:"to"`
-	Msg       string `json:"message"`
-	MsgType   string `json:"msg_type"`
-	Timestamp int64  `json:"timestamp"`
-}
-
 func (impl *connectService) HandleWebSocketStreamConnect(w http.ResponseWriter, r *http.Request) {
-	// channel to signal goroutine stop
-	stopChan := make(chan struct{})
-	defer close(stopChan)
-
 	// Upgrade initial http request to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -137,26 +106,31 @@ func (impl *connectService) HandleWebSocketStreamConnect(w http.ResponseWriter, 
 		return
 	}
 	defer func() {
-		if err := impl.streamClient.DeleteSubscription(ctx, subscriptionID); err != nil {
-			log.Errorf("failed to create subscription to stream topic: %v", err)
+		if err := impl.streamClient.DeleteSubscription(context.Background(), subscriptionID); err != nil {
+			log.Errorf("failed to delete subscription %s: %v", subscriptionID, err)
+		} else {
+			log.Infof("successfully delete subscription %s", subscriptionID)
 		}
 	}()
 
 	// get message from sub and return to websocket client
-	go func(stopChan chan struct{}) {
+	// channel to signal goroutine stop
+	stopChan := make(chan struct{})
+	go func() {
 		if err := impl.listenToStream(ctx, ws, sub, subscriptionID, stopChan); err != nil {
 			log.Errorf("failed to listenToStream: %v", err)
 		}
-	}(stopChan)
-	err = impl.sendToStream(ctx, ws, topic)
-	if err != nil {
+		log.Infof("listenToStream closed for client %s", ws.RemoteAddr().String())
+	}()
+	if err = impl.sendToStream(ctx, ws, topic, chatroomID, userID); err != nil {
 		log.Errorf("failed to sendToStream: %v", err)
 	}
-	log.Info("sendToStream closed")
-	log.Info("HandleWebSocketStreamConnect closed")
+	log.Infof("sendToStream closed for %s", ws.RemoteAddr().String())
+	close(stopChan)
+	log.Infof("HandleWebSocketStreamConnect closed %s", ws.RemoteAddr().String())
 }
 
-func (impl *connectService) sendToStream(ctx context.Context, conn *websocket.Conn, topic stream.Topic) error {
+func (impl *connectService) sendToStream(ctx context.Context, conn *websocket.Conn, topic stream.Topic, chatroomID, userID string) error {
 	// listen for new messages from the client
 	for {
 		select {
@@ -165,7 +139,7 @@ func (impl *connectService) sendToStream(ctx context.Context, conn *websocket.Co
 			return nil
 		default:
 			// parse client chat room message
-			var chatMsg ChatRoomMessage
+			var chatMsg StreamChatRoomMessage
 			err := conn.ReadJSON(&chatMsg)
 			log.Infof("successfully receive message from ws client %+v ", chatMsg)
 			if err != nil {
@@ -179,6 +153,11 @@ func (impl *connectService) sendToStream(ctx context.Context, conn *websocket.Co
 				}
 				return errors.Errorf("failed to read chat room msg: %v", err)
 			}
+
+			// TODO: check if userID and room ID matched
+			// if !(chatMsg.UserID == userID && chatMsg.RoomID != chatroomID) {
+			// 	return errors.Errorf("failed to handle msg from client ws due to mismatched userID orr chatroomID: %v", err)
+			// }
 
 			// send the new message to redis stream
 			id, err := impl.idGenerator.NextID()
@@ -198,20 +177,13 @@ func (impl *connectService) sendToStream(ctx context.Context, conn *websocket.Co
 }
 
 func (impl *connectService) listenToStream(ctx context.Context, conn *websocket.Conn, sub stream.Subscription, subID string, stopChan chan struct{}) error {
-	defer func() {
-		if err := impl.streamClient.DeleteSubscription(context.Background(), subID); err != nil {
-			log.Errorf("failed to delete subscription %s: %v", subID, err)
-		} else {
-			log.Infof("successfully delete subscription %s: %v", subID, err)
-		}
-	}()
-
 	h := func(ctx context.Context, msg *stream.Message) {
 		resp := &StreamChatRoomResponse{}
 		if err := resp.convertRedisDataTo(msg.Attributes); err != nil {
 			log.Errorf("failed to convert stream data to StreamChatRoomResponse: %v", err)
 			return
 		}
+		resp.UserName = resp.UserID // TODO: replace with real user name
 		err := conn.WriteJSON(resp)
 		if err != nil {
 			log.Errorf("failed to writing message to ws connection: %v", err)

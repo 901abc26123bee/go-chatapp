@@ -3,9 +3,11 @@ package account
 import (
 	"gsm/pkg/cache"
 	"gsm/pkg/errors"
+	"gsm/pkg/mdb"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // AccountController is the interface for account api
@@ -21,13 +23,15 @@ type AccountController interface {
 type accountController struct {
 	userService UserService
 	authService AuthService
+	dbKey       string
 }
 
 // NewAccountController creates a new account controller
-func NewAccountController(redisClient cache.Client) (AccountController, error) {
+func NewAccountController(redisClient cache.Client, mongodb *mongo.Client, dbKey string) (AccountController, error) {
 	return &accountController{
-		userService: NewUserService(redisClient),
-		authService: NewAuthService(redisClient),
+		userService: NewUserService(redisClient, mongodb.Database(mdb.DatabaseGSM)),
+		authService: NewAuthService(redisClient, mongodb.Database(mdb.DatabaseGSM)),
+		dbKey:       dbKey,
 	}, nil
 }
 
@@ -51,6 +55,12 @@ func (impl *accountController) CreateUser(ctx *gin.Context) {
 	}
 
 	// get response from service
+	// TODO: check password, email, user name
+	if request.Email == "" || request.Name == "" || request.Password == "" {
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect,
+			"empty fields in request body are not allowed"))
+		return
+	}
 	response, err := impl.userService.CreateUser(ctx, request)
 	if err != nil {
 		ctx.Error(err)

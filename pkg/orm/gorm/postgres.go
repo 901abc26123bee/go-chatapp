@@ -25,7 +25,6 @@ func Initialize(configPath string) (orm.DB, error) {
 // InitializeWithCrpyoKey open a sql connection with the dbCryptoKey
 func InitializeWithEncryptedKey(configPath, dbCryptoKey string) (orm.DB, error) {
 	dbConfig, err := os.ReadFile(configPath)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get db config: %v", err.Error())
 	}

@@ -11,33 +11,33 @@ import (
 
 // RealtimeController is the interface for realtime api
 type RealtimeController interface {
-	TestInMemoryWebsocketIO(*gin.Context)
+	HandleMemoryWebsocketIO(*gin.Context)
 	HandleWebSocketStreamConnect(*gin.Context)
 	CreateChatRoom(*gin.Context)
 }
 
 // realtimeController defines the implementation of RealtimeController interface
 type realtimeController struct {
-	redisClient    cache.Client
-	streamClient   stream.Client
-	idGenerator    sonyflake.IDGenerator
-	connectService ConnectService
-	chatService    ChatService
+	redisClient       cache.Client
+	streamClient      stream.Client
+	idGenerator       sonyflake.IDGenerator
+	connectService    ConnectService
+	streamChatService StreamChatService
 }
 
 // NewRealtimeController creates a new realtime controller
 func NewRealtimeController(redisClient cache.Client, streamClient stream.Client, idGenerator sonyflake.IDGenerator) (RealtimeController, error) {
 	return &realtimeController{
-		redisClient:    redisClient,
-		streamClient:   streamClient,
-		idGenerator:    idGenerator,
-		connectService: NewConnectService(redisClient, streamClient, idGenerator),
-		chatService:    NewChatService(redisClient),
+		redisClient:       redisClient,
+		streamClient:      streamClient,
+		idGenerator:       idGenerator,
+		connectService:    NewConnectService(redisClient, streamClient, idGenerator),
+		streamChatService: NewStreamChatService(redisClient),
 	}, nil
 }
 
-// TestInMemoryWebsocketIO test websocket io with in-serve memory
-func (impl *realtimeController) TestInMemoryWebsocketIO(ctx *gin.Context) {
+// HandleMemoryWebsocketIO test websocket io with in-serve memory
+func (impl *realtimeController) HandleMemoryWebsocketIO(ctx *gin.Context) {
 	realtime.ServeWS(ctx.Writer, ctx.Request)
 }
 

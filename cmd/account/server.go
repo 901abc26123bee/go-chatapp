@@ -13,6 +13,7 @@ var (
 	dbkey           string
 	port            string
 	redisConfigPath string
+	mongodbPath     string
 )
 
 func init() {
@@ -20,6 +21,7 @@ func init() {
 	flag.StringVar(&dbkey, "db-key", "", "da encrypted key")
 	flag.StringVar(&redisConfigPath, "redis", "", "redis config path")
 	flag.StringVar(&port, "port", ":8080", "service port")
+	flag.StringVar(&mongodbPath, "mongodb", "", "mongodb config path")
 }
 
 func main() {
@@ -27,9 +29,10 @@ func main() {
 
 	// create gin router for realtime service.
 	router, err := account_router.NewRouter(account_router.RouterConfig{
-		SqlConfigPath:   sqlConfigPath,
-		DBKey:           dbkey,
-		RedisConfigPath: redisConfigPath,
+		SqlConfigPath:     sqlConfigPath,
+		DBKey:             dbkey,
+		RedisConfigPath:   redisConfigPath,
+		MongodbConfigPath: mongodbPath,
 	})
 	if err != nil {
 		log.Fatalf("Init account router error: %v", err)

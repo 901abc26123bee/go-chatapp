@@ -19,8 +19,6 @@ func CorsHandler(allowOrigin string) gin.HandlerFunc {
 			return
 		}
 
-		c.Request.Header.Del("Origin")
-
 		c.Next()
 	}
 }

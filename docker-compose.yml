@@ -28,18 +28,20 @@ services:
       - redis_data:/data
       - ./deployment/config/redis/init.config:/usr/local/etc/redis/init.conf
     command: ["redis-server", "/usr/local/etc/redis/init.conf"]
-  # mongo:
-  #   build:
-  #     context: .
-  #     dockerfile: ./deployment/dockerfile/mongodb.Dockerfile
-  #   container_name: gsm_mongo
-  #   ports:
-  #     - 27017:27017
-  #   volumes:
-  #     - mongo_data:/data/db
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: mongouser
-  #     MONGO_INITDB_ROOT_PASSWORD: mongopw
+  mongo:
+    build:
+      context: .
+      dockerfile: ./deployment/dockerfile/mongodb.Dockerfile
+    container_name: gsm_mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+      - ./deployment/config/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpw
+      MONGO_INITDB_DATABASE: gsm
   # minio:
   #   build:
   #     context: .
@@ -89,6 +91,6 @@ services:
 
 volumes:
   # postgres_data:
-  # mongo_data:
+  mongo_data:
   redis_data:
   # minio_data:

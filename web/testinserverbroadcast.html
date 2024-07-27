@@ -31,7 +31,7 @@
         }
 
         function connect() {
-            socket = new WebSocket("ws://localhost:8081/api/realtime/v1/ws");
+            socket = new WebSocket("ws://localhost:8081/api/realtime/v1/chatroom/ws");
             socket.onmessage = function(event) {
                 const message = JSON.parse(event.data);
                 const messageElem = document.createElement("div");
