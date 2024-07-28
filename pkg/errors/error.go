@@ -24,6 +24,7 @@ const (
 const (
 	TokenExpired ErrCode = iota + 2000
 	TokenEmpty
+	TokenInvalid
 	// ...
 )
 
@@ -49,6 +50,7 @@ var (
 	// errors for 2000(authorization) prefix
 	errTokenExpired = *newErrContent(http.StatusUnauthorized, TokenExpired, "token is expired")
 	errTokenEmpty   = *newErrContent(http.StatusUnauthorized, TokenEmpty, "token is empty")
+	errTokenInvalid = *newErrContent(http.StatusUnauthorized, TokenInvalid, "token is invalid")
 )
 
 var errorPool = map[ErrCode]ErrContent{
@@ -63,6 +65,7 @@ var errorPool = map[ErrCode]ErrContent{
 	// errors for 2000(authorization) prefix
 	TokenEmpty:   errTokenEmpty,
 	TokenExpired: errTokenExpired,
+	TokenInvalid: errTokenInvalid,
 }
 
 func newErrContent(statusCode int, code ErrCode, msg string) *ErrContent {

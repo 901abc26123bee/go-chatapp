@@ -10,6 +10,7 @@ import (
 	realtime "gsm/api/realtime"
 	cors "gsm/middleware/cors"
 	errors "gsm/middleware/errors"
+	"gsm/middleware/jwt"
 	timeout "gsm/middleware/timeout"
 	rediscache "gsm/pkg/cache/redis"
 	"gsm/pkg/stream/streamredis"
@@ -24,8 +25,10 @@ const realtimeVersion = "v1"
 
 // RouterConfig defines configs for dataset router
 type RouterConfig struct {
-	SqlConfigPath   string
-	RedisConfigPath string
+	SqlConfigPath     string
+	RedisConfigPath   string
+	MongodbConfigPath string
+	JwtSecret         string
 }
 
 // RealtimeRouter defines a gin engine for realtime router.
@@ -68,7 +71,9 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
-	r.Use(corsHandler, errorHandler, timeoutHandler)
+	jwtHandler := jwt.HandleHeaderAuthorization(config.JwtSecret)
+
+	r.Use(corsHandler, jwtHandler, errorHandler, timeoutHandler)
 
 	realtimeGroup := r.Group(path.Join("/api/realtime", realtimeVersion))
 	{

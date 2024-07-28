@@ -23,7 +23,7 @@ func ComparePasswords(hashedPassword string, password string) error {
 	return err
 }
 
-// Sha256 generates the hashed string by an input string.
+// Sha256 generates the hashed and upcased string by an input string.
 func Sha256(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return strings.ToUpper(fmt.Sprintf("%x", sum))

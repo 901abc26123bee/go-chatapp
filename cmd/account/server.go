@@ -14,6 +14,7 @@ var (
 	port            string
 	redisConfigPath string
 	mongodbPath     string
+	jwtSecret       string
 )
 
 func init() {
@@ -22,6 +23,7 @@ func init() {
 	flag.StringVar(&redisConfigPath, "redis", "", "redis config path")
 	flag.StringVar(&port, "port", ":8080", "service port")
 	flag.StringVar(&mongodbPath, "mongodb", "", "mongodb config path")
+	flag.StringVar(&jwtSecret, "jwt", "", "jwt secret")
 }
 
 func main() {
@@ -33,6 +35,7 @@ func main() {
 		DBKey:             dbkey,
 		RedisConfigPath:   redisConfigPath,
 		MongodbConfigPath: mongodbPath,
+		JwtSecret:         jwtSecret,
 	})
 	if err != nil {
 		log.Fatalf("Init account router error: %v", err)

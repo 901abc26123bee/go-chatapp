@@ -13,7 +13,8 @@
         "program": "${workspaceFolder}/cmd/account",
         "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
                   "-redis", "${workspaceFolder}/deployment/config/redis/local_redis.txt",
-                  "--mongodb", "${workspaceFolder}/deployment/config/mongodb/local_mongo.txt",
+                  "-mongodb", "${workspaceFolder}/deployment/config/mongodb/local_mongo.txt",
+                  "-jwt", "jwtsecret",
                   "--port", ":8080"],
     },
     {
@@ -25,6 +26,8 @@
       "program": "${workspaceFolder}/cmd/realtime",
       "args": ["-sql", "${workspaceFolder}/deployment/config/db/local_postgres.txt",
                 "-redis", "${workspaceFolder}/deployment/config/redis/local_redis.txt",
+                "-mongodb", "${workspaceFolder}/deployment/config/mongodb/local_mongo.txt",
+                "-jwt", "jwtsecret",
                 "--port", ":8081"],
     },
     {

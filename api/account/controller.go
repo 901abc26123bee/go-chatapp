@@ -5,6 +5,7 @@ import (
 	"gsm/pkg/errors"
 	"gsm/pkg/mdb"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,10 +28,10 @@ type accountController struct {
 }
 
 // NewAccountController creates a new account controller
-func NewAccountController(redisClient cache.Client, mongodb *mongo.Client, dbKey string) (AccountController, error) {
+func NewAccountController(redisClient cache.Client, mongodb *mongo.Client, dbKey string, jwtSecret string) (AccountController, error) {
 	return &accountController{
-		userService: NewUserService(redisClient, mongodb.Database(mdb.DatabaseGSM)),
-		authService: NewAuthService(redisClient, mongodb.Database(mdb.DatabaseGSM)),
+		userService: NewUserService(redisClient, mongodb.Database(mdb.DatabaseGSM), jwtSecret),
+		authService: NewAuthService(redisClient, mongodb.Database(mdb.DatabaseGSM), jwtSecret),
 		dbKey:       dbKey,
 	}, nil
 }
@@ -54,13 +55,28 @@ func (impl *accountController) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	// get response from service
-	// TODO: check password, email, user name
-	if request.Email == "" || request.Name == "" || request.Password == "" {
-		ctx.Error(errors.NewErrorf(errors.ParamIncorrect,
-			"empty fields in request body are not allowed"))
+	// check request body
+	if name := strings.TrimSpace(request.Name); name == "" {
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect, "empty name"))
 		return
+	} else {
+		request.Name = name
 	}
+	if email := strings.TrimSpace(request.Email); email == "" {
+		// TODO: check email format
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect, "empty email"))
+		return
+	} else {
+		request.Email = email
+	}
+	if pw := strings.TrimSpace(request.Password); pw == "" {
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect, "empty password"))
+		return
+	} else {
+		request.Password = pw
+	}
+
+	// get response from service
 	response, err := impl.userService.CreateUser(ctx, request)
 	if err != nil {
 		ctx.Error(err)
@@ -87,6 +103,21 @@ func (impl *accountController) Login(ctx *gin.Context) {
 		ctx.Error(errors.NewErrorf(errors.ParamIncorrect,
 			"failed to parse CreateUser request body: %v", err))
 		return
+	}
+
+	// check request body
+	if email := strings.TrimSpace(request.Email); email == "" {
+		// TODO: check email format
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect, "empty email"))
+		return
+	} else {
+		request.Email = email
+	}
+	if pw := strings.TrimSpace(request.Password); pw == "" {
+		ctx.Error(errors.NewErrorf(errors.ParamIncorrect, "empty password"))
+		return
+	} else {
+		request.Password = pw
 	}
 
 	// get response from service

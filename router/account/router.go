@@ -11,6 +11,7 @@ import (
 	account "gsm/api/account"
 	cors "gsm/middleware/cors"
 	errors "gsm/middleware/errors"
+	"gsm/middleware/jwt"
 	timeout "gsm/middleware/timeout"
 
 	// gormpsql "gsm/pkg/orm/gorm"
@@ -27,6 +28,7 @@ type RouterConfig struct {
 	DBKey             string
 	RedisConfigPath   string
 	MongodbConfigPath string
+	JwtSecret         string
 }
 
 // AccountRouter defines a gin engine for account router.
@@ -56,7 +58,7 @@ func NewRouter(config RouterConfig) (*AccountRouter, error) {
 		return nil, fmt.Errorf("failed to initialize mongodb: %v", err)
 	}
 
-	accountController, err := account.NewAccountController(cache, mongodbClient, config.DBKey)
+	accountController, err := account.NewAccountController(cache, mongodbClient, config.DBKey, config.JwtSecret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to new account controller: %v", err)
 	}
@@ -66,15 +68,22 @@ func NewRouter(config RouterConfig) (*AccountRouter, error) {
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
+	authHandler := jwt.HandleHeaderAuthorization(config.JwtSecret)
 	r.Use(corsHandler, errorHandler, timeoutHandler)
 
 	accountGroup := r.Group(path.Join("/api/account", accountVersion))
+	accountGroup.GET("/healthz", getHealthz)
 	{
-		accountGroup.GET("/healthz", getHealthz)
+		userGroup := accountGroup.Group("/user")
 		{
-			accountGroup.GET("/user", accountController.GetUser)
-			accountGroup.POST("/user", accountController.CreateUser)
-			accountGroup.POST("/login", accountController.Login)
+			userGroup.POST("/user", accountController.CreateUser)
+			userGroup.GET("/user", authHandler, accountController.GetUser)
+		}
+
+		authGroup := accountGroup.Group("/auth")
+		{
+			authGroup.POST("/login", accountController.Login)
+			authGroup.POST("/logout", authHandler, accountController.Login)
 		}
 	}
 
