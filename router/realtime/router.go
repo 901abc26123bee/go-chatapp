@@ -11,6 +11,7 @@ import (
 	cors "gsm/middleware/cors"
 	errors "gsm/middleware/errors"
 	"gsm/middleware/jwt"
+	"gsm/middleware/logger"
 	timeout "gsm/middleware/timeout"
 	rediscache "gsm/pkg/cache/redis"
 	"gsm/pkg/stream/streamredis"
@@ -71,9 +72,9 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
-	jwtHandler := jwt.HandleHeaderAuthorization(config.JwtSecret)
-
-	r.Use(corsHandler, jwtHandler, errorHandler, timeoutHandler)
+	jwtQueryParamsHandler := jwt.QueryParamsAuthorizationHandler(config.JwtSecret)
+	loggerHandler := logger.LoggerHandler()
+	r.Use(corsHandler, errorHandler, timeoutHandler, loggerHandler)
 
 	realtimeGroup := r.Group(path.Join("/api/realtime", realtimeVersion))
 	{
@@ -81,8 +82,8 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 		{
 			chatroomGroup := realtimeGroup.Group("/chatroom")
 			{
-				chatroomGroup.GET("/ws", realtimeController.HandleMemoryWebsocketIO)
-				chatroomGroup.GET("/stream", realtimeController.HandleWebSocketStreamConnect)
+				chatroomGroup.GET("/ws", jwtQueryParamsHandler, realtimeController.HandleMemoryWebsocketIO)
+				chatroomGroup.GET("/stream", jwtQueryParamsHandler, realtimeController.HandleWebSocketStreamConnect)
 			}
 		}
 	}

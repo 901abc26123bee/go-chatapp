@@ -40,10 +40,5 @@ func InitializeWithEncryptedKey(ctx context.Context, configPath, dbCryptoKey str
 		return nil, fmt.Errorf("failed to ping to mongo db: %v", err)
 	}
 
-	// var result bson.M
-	// if err := client.Database("admin").RunCommand(ctx, bson.D{{Key: "ping", Value: 1}}).Decode(&result); err != nil {
-	// 	return nil, fmt.Errorf("failed to ping to mongo db: %v", err)
-	// }
-
 	return client, nil
 }

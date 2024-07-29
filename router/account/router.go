@@ -12,6 +12,7 @@ import (
 	cors "gsm/middleware/cors"
 	errors "gsm/middleware/errors"
 	"gsm/middleware/jwt"
+	"gsm/middleware/logger"
 	timeout "gsm/middleware/timeout"
 
 	// gormpsql "gsm/pkg/orm/gorm"
@@ -64,20 +65,21 @@ func NewRouter(config RouterConfig) (*AccountRouter, error) {
 	}
 
 	r := gin.Default()
-	// TODO: do not allow *
+	// TODO: do not allow *(* for develop)
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
-	authHandler := jwt.HandleHeaderAuthorization(config.JwtSecret)
-	r.Use(corsHandler, errorHandler, timeoutHandler)
+	authHandler := jwt.HeaderAuthorizationHandler(config.JwtSecret)
+	loggerHandler := logger.LoggerHandler()
+	r.Use(corsHandler, errorHandler, timeoutHandler, loggerHandler)
 
 	accountGroup := r.Group(path.Join("/api/account", accountVersion))
 	accountGroup.GET("/healthz", getHealthz)
 	{
 		userGroup := accountGroup.Group("/user")
 		{
-			userGroup.POST("/user", accountController.CreateUser)
-			userGroup.GET("/user", authHandler, accountController.GetUser)
+			userGroup.POST("", accountController.CreateUser)
+			userGroup.GET("", authHandler, accountController.GetUser)
 		}
 
 		authGroup := accountGroup.Group("/auth")

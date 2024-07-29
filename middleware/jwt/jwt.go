@@ -15,10 +15,19 @@ import (
 const (
 	// JWTClaimID defines the key of jwt claims ID save in context variable
 	JWTClaimID = "jwt_claim_id"
+	// AccessTokenQueryParams defines the query params key name of jwt access token
+	AccessTokenQueryParams = "access-token"
 )
 
-// HandleHeaderAuthorization verify bearer token in header is a valid jwt token
-func HandleHeaderAuthorization(secret string) gin.HandlerFunc {
+// HeaderAuthorizationHandler verify bearer token in header is a valid jwt token
+func QueryParamsAuthorizationHandler(secret string) gin.HandlerFunc {
+	return handleAuthorization(secret, func(r *http.Request) string {
+		return r.URL.Query().Get(AccessTokenQueryParams)
+	})
+}
+
+// HeaderAuthorizationHandler verify bearer token in header is a valid jwt token
+func HeaderAuthorizationHandler(secret string) gin.HandlerFunc {
 	return handleAuthorization(secret, func(r *http.Request) string {
 		return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 	})

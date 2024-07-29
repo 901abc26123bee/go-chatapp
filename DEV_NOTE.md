@@ -140,6 +140,8 @@ OK
 
 redis-cli -u redis://redisuser:redispw@localhost:6379
 
+###  go-redis version
+https://github.com/redis/go-redis/discussions/2241
 
 ### redis stream
 

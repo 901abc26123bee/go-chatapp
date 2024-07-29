@@ -48,6 +48,7 @@
         const statusDiv = document.getElementById('status');
         let currentRoomId = '';
         const userID = Math.random().toString(36).substring(2, 15); // Generate a unique user ID
+        const token = localStorage.getItem('access-token');
 
         function updateStatus(status) {
             statusDiv.textContent = status;
@@ -62,8 +63,10 @@
             // clear the chat messages
             chatDiv.innerHTML = '';
             currentRoomId = roomId; // store the current room ID
-
-            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room-id=${roomId}`;
+            if (token == "") {
+                console.log('user not login');
+            }
+            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room-id=${roomId}&access-token=${encodeURIComponent(token)}`;
             ws = new WebSocket(url);
 
             ws.onopen = () => {

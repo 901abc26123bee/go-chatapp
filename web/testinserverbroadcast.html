@@ -19,8 +19,12 @@
     <script>
         let socket;
         let username;
+        const token = localStorage.getItem('access-token');
 
         function joinChat() {
+            if (token == "") {
+                console.log('user not login');
+            }
             username = document.getElementById("username").value;
             if (username === "") {
                 alert("Please enter a username");
@@ -31,12 +35,24 @@
         }
 
         function connect() {
-            socket = new WebSocket("ws://localhost:8081/api/realtime/v1/chatroom/ws");
+            if (token == "") {
+                console.log('user not login');
+            }
+            socket = new WebSocket(`ws://localhost:8081/api/realtime/v1/chatroom/ws&access-token=${encodeURIComponent(token)}`);
             socket.onmessage = function(event) {
                 const message = JSON.parse(event.data);
                 const messageElem = document.createElement("div");
                 messageElem.innerText = message.username + ": " + message.message;
                 document.getElementById("messages").appendChild(messageElem);
+            };
+            socket.onclose = () => {
+                console.log('WebSocket connection closed');
+                updateStatus('Disconnected');
+            };
+
+            socket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('Disconnected');
             };
         }
 
