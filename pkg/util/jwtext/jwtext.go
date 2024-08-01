@@ -39,6 +39,11 @@ const (
 	ClaimSubject   = "sub"
 )
 
+const (
+	// AccessTokenQueryParamKey defines the query params key name of jwt access token
+	AccessTokenQueryParamKey = "access_token"
+)
+
 // CreateAccessToken creates access token with access subject and with duration limit (10 minutes) and return jwt token and expire time
 func CreateAccessToken(uid, secret string, claims JwtMapClaims, duration time.Duration) (string, time.Duration, error) {
 	token, err := createToken(uid, secret, SubjectAccess, minDuration(AccessTokenDuration, duration), claims)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Room</title>
+    <title>Join Default Chat Room</title>
 </head>
 <body>
     <div>
@@ -38,7 +38,13 @@
             if (token == "") {
                 console.log('user not login');
             }
-            socket = new WebSocket(`ws://localhost:8081/api/realtime/v1/chatroom/ws&access-token=${encodeURIComponent(token)}`);
+            const encodedToken = encodeURIComponent(token);
+            const url = `ws://localhost:8081/api/realtime/v1/chatroom/ws?&access_token=${encodedToken}`;
+            socket = new WebSocket(url);
+            socket.onopen = () => {
+                console.log('WebSocket connection opened');
+                updateStatus('Connected');
+            };
             socket.onmessage = function(event) {
                 const message = JSON.parse(event.data);
                 const messageElem = document.createElement("div");

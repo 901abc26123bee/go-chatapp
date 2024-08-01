@@ -2,13 +2,30 @@ package realtime
 
 import (
 	"fmt"
+	"net/url"
 
 	"gsm/pkg/util/convert"
 )
 
+type ChatRoomAction string
+
+const (
+	ActionJoinChatRoom    ChatRoomAction = "JOIN_CHAT_ROOM"
+	ActionLeaveChatRoom   ChatRoomAction = "LEAVE_CHAT_ROOM"
+	ActionChatRoomMessage ChatRoomAction = "CHAT_ROOM_MESSAGE"
+)
+
 // StreamChatRoomQueryParams defines query params of api HandleWebSocketStreamConnect
 type StreamChatRoomQueryParams struct {
+	Action string
 	RoomID string `form:"room_id" json:"room_id"`
+}
+
+// BindToStreamChatRoomQueryParams bind queryParams to StreamChatRoomQueryParams
+func BindToStreamChatRoomQueryParams(queryParams url.Values) (params *StreamChatRoomQueryParams) {
+	return &StreamChatRoomQueryParams{
+		RoomID: queryParams.Get("room_id"),
+	}
 }
 
 // StreamChatRoomResponse defines resp body of api HandleWebSocketStreamConnect

@@ -72,9 +72,10 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	corsHandler := cors.CorsHandler("*")
 	errorHandler := errors.ErrorHandler()
 	timeoutHandler := timeout.RequestTimeoutHandler()
-	jwtQueryParamsHandler := jwt.QueryParamsAuthorizationHandler(config.JwtSecret)
+	authHandler := jwt.HttpRequestQueryParamsAuthorizationHandler(config.JwtSecret)
 	loggerHandler := logger.LoggerHandler()
-	r.Use(corsHandler, errorHandler, timeoutHandler, loggerHandler)
+
+	r.Use(corsHandler, timeoutHandler, authHandler, errorHandler, loggerHandler)
 
 	realtimeGroup := r.Group(path.Join("/api/realtime", realtimeVersion))
 	{
@@ -82,8 +83,8 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 		{
 			chatroomGroup := realtimeGroup.Group("/chatroom")
 			{
-				chatroomGroup.GET("/ws", jwtQueryParamsHandler, realtimeController.HandleMemoryWebsocketIO)
-				chatroomGroup.GET("/stream", jwtQueryParamsHandler, realtimeController.HandleWebSocketStreamConnect)
+				chatroomGroup.GET("/ws", realtimeController.HandleMemoryWebsocketIO)
+				chatroomGroup.GET("/stream", realtimeController.HandleWebSocketStreamConnect)
 			}
 		}
 	}

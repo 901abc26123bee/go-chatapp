@@ -15,27 +15,24 @@ import (
 const (
 	// JWTClaimID defines the key of jwt claims ID save in context variable
 	JWTClaimID = "jwt_claim_id"
-	// AccessTokenQueryParams defines the query params key name of jwt access token
-	AccessTokenQueryParams = "access-token"
 )
 
 // HeaderAuthorizationHandler verify bearer token in header is a valid jwt token
-func QueryParamsAuthorizationHandler(secret string) gin.HandlerFunc {
-	return handleAuthorization(secret, func(r *http.Request) string {
-		return r.URL.Query().Get(AccessTokenQueryParams)
-	})
-}
-
-// HeaderAuthorizationHandler verify bearer token in header is a valid jwt token
 func HeaderAuthorizationHandler(secret string) gin.HandlerFunc {
-	return handleAuthorization(secret, func(r *http.Request) string {
+	return handleAuthorizationWithGin(secret, func(r *http.Request) string {
 		return strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 	})
 }
 
-func handleAuthorization(secret string, getToken func(req *http.Request) string) gin.HandlerFunc {
+func HttpRequestQueryParamsAuthorizationHandler(secret string) gin.HandlerFunc {
+	return handleAuthorizationWithGin(secret, func(r *http.Request) string {
+		return r.URL.Query().Get(jwtext.AccessTokenQueryParamKey)
+	})
+}
+
+func handleAuthorizationWithGin(secret string, getToken func(req *http.Request) string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// check jwt secret is empty to avoid using an empty string to create token by accedient
+		// check jwt secret is empty to avoid using an empty string to create token by accident
 		if secret == "" {
 			ctx.Error(pkgerrors.NewError(pkgerrors.InternalServerError, "jwt secret is empty"))
 			ctx.Abort()

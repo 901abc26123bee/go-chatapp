@@ -71,7 +71,7 @@ func NewRouter(config RouterConfig) (*AccountRouter, error) {
 	timeoutHandler := timeout.RequestTimeoutHandler()
 	authHandler := jwt.HeaderAuthorizationHandler(config.JwtSecret)
 	loggerHandler := logger.LoggerHandler()
-	r.Use(corsHandler, errorHandler, timeoutHandler, loggerHandler)
+	r.Use(corsHandler, timeoutHandler, errorHandler, loggerHandler)
 
 	accountGroup := r.Group(path.Join("/api/account", accountVersion))
 	accountGroup.GET("/healthz", getHealthz)

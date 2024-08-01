@@ -3,7 +3,9 @@ package realtime
 import (
 	"github.com/gin-gonic/gin"
 
+	"gsm/middleware/jwt"
 	"gsm/pkg/cache"
+	"gsm/pkg/errors"
 	"gsm/pkg/realtime"
 	"gsm/pkg/stream"
 	"gsm/pkg/util/sonyflake"
@@ -43,7 +45,18 @@ func (impl *realtimeController) HandleMemoryWebsocketIO(ctx *gin.Context) {
 
 // HandleWebsocketIO handle socket io for client
 func (impl *realtimeController) HandleWebSocketStreamConnect(ctx *gin.Context) {
-	impl.connectService.HandleWebSocketStreamConnect(ctx.Writer, ctx.Request)
+	// get id from gin context parsed in auth middleware
+	jwtClaimsID, ok := ctx.Get(jwt.JWTClaimID)
+	if !ok {
+		ctx.Error(errors.NewError(errors.InternalServerError, "failed to get id from access token"))
+		return
+	}
+	userID, ok := jwtClaimsID.(string)
+	if !ok {
+		ctx.Error(errors.NewError(errors.InternalServerError, "failed to convert jwt claim id to string"))
+		return
+	}
+	impl.connectService.HandleWebSocketStreamConnect(userID, ctx.Request, ctx.Writer)
 }
 
 func (impl *realtimeController) CreateChatRoom(ctx *gin.Context) {

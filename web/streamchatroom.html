@@ -66,12 +66,18 @@
             if (token == "") {
                 console.log('user not login');
             }
-            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room-id=${roomId}&access-token=${encodeURIComponent(token)}`;
+            const encodedToken = encodeURIComponent(token);
+            const encodedRoomId = encodeURIComponent(roomId);
+            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room_id=${encodedRoomId}&access_token=${encodedToken}`;
             ws = new WebSocket(url);
-
             ws.onopen = () => {
-                console.log('WebSocket connection opened');
-                updateStatus('Connected');
+                if (encodedRoomId != "" && encodedToken != "") {
+                    console.log('WebSocket connection opened');
+                    ws.send(JSON.stringify({}));
+                    updateStatus('Connected');
+                } else {
+                    console.error('failed to connect to ws');
+                }
             };
 
             ws.onmessage = (event) => {

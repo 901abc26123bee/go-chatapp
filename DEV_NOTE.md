@@ -161,7 +161,7 @@ When you create a consumer group with XGroupCreateMkStream, you provide the stre
 
 
 
-ws://localhost:8081/api/realtime/v1/chatroom/stream?room-id="test"
+ws://localhost:8081/api/realtime/v1/chatroom/stream?room_id="test"
 
 {"room_id":"test-stream-chatroom","user_id":"user_id","chat":"fdewfcewf"}
 {"id":"523973393041588252","room_id":"","user_id":"","chat":"fdewfcewf"}

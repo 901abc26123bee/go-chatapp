@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/oklog/ulid/v2"
 	log "github.com/sirupsen/logrus"
 
 	"gsm/pkg/cache"
@@ -25,7 +24,7 @@ type connectService struct {
 
 // ConnectService defines the connect service interface
 type ConnectService interface {
-	HandleWebSocketStreamConnect(w http.ResponseWriter, r *http.Request)
+	HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter)
 }
 
 // NewConnectService init the connect service
@@ -49,7 +48,7 @@ var (
 
 const wsTimeoutDuration = 300 * time.Second
 
-func (impl *connectService) HandleWebSocketStreamConnect(w http.ResponseWriter, r *http.Request) {
+func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter) {
 	// Upgrade initial http request to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -68,21 +67,18 @@ func (impl *connectService) HandleWebSocketStreamConnect(w http.ResponseWriter, 
 	}
 	ctx := r.Context()
 
-	// parse use_id from jwt token
-	userID := ulid.Make().String()
-
-	// set user online in redis
-	// key := fmt.Sprintf("chatroom:%s:%s", chatroomID, userID)
-	// if err = impl.redisClient.Set(ctx, key, true, 600*time.Second); err != nil {
-	// 	log.Errorf("failed to set user online in redis: %v", err)
-	// 	return
-	// }
-
-	// parse chat room id
-	queryParams := r.URL.Query()
-	chatroomID := queryParams.Get("room-id")
+	// parse chat room id and token
+	queryParams := BindToStreamChatRoomQueryParams(r.URL.Query())
+	chatroomID := queryParams.RoomID
 	if chatroomID == "" {
 		log.Errorf("empty room-id parameter")
+		return
+	}
+
+	// set user online in redis
+	key := fmt.Sprintf("chatroom:%s:online:%s", chatroomID, userID)
+	if err = impl.redisClient.Set(ctx, key, true, 600*time.Second); err != nil {
+		log.Errorf("failed to set user online in redis: %v", err)
 		return
 	}
 
