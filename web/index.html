@@ -5,55 +5,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
 </head>
 <body>
-    <button onclick="http_send()">Send</button>
-    <div id="responseDiv" style="white-space: pre-wrap; margin-top: 10px;"></div>
-
-    <input id="input" type="text" />
-    <button onclick="websocket_send()">Send</button>
-    <div id="output"></div>
-
     <p><a href="userlogin.html">User Register or Login</a></p>
     <p><a href="testinserverbroadcast.html">In-service Broadcast</a></p>
     <p><a href="streamchatroom.html">Redis Stream Chat Room</a></p>
-
-    <script>
-        // account service
-        function http_send() {
-            fetch('http://localhost:8080/api/account/v1/healthz')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Success:', data);
-                document.getElementById('responseDiv').innerText = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-                document.getElementById('responseDiv').innerText = 'Error: ' + error.message;
-            });
-        }
-
-        // realtime service
-        function http_send() {
-            fetch('http://localhost:8080/api/realtime/v1/healthz')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Success:', data);
-                document.getElementById('responseDiv').innerText = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-                document.getElementById('responseDiv').innerText = 'Error: ' + error.message;
-            });
-        }
-
-    </script>
 </body>

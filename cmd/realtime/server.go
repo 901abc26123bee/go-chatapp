@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 
-	realtime_router "gsm/router/realtime"
-
 	log "github.com/sirupsen/logrus"
+
+	realtime_router "gsm/router/realtime"
 )
 
 var (
@@ -35,10 +35,10 @@ func main() {
 		JwtSecret:         jwtSecret,
 	})
 	if err != nil {
-		log.Fatalf("Init account router error: %v", err)
+		log.Fatalf("Init realtime router error: %v", err)
 	}
 
 	if err := router.Run(port); err != nil {
-		log.Fatalf("failed to start account server: %v", err)
+		log.Fatalf("failed to start realtime server: %v", err)
 	}
 }

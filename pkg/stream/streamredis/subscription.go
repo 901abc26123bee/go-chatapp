@@ -36,8 +36,8 @@ func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context,
 		Group:    s.xGroupID,
 		Consumer: s.xGroupID,               // set consumer to group since each group will only consume by distinct member
 		Streams:  []string{s.topicID, ">"}, // only get messages that were added after the last acknowledgment or after the consumer group was created.
-		Count:    1,                        // reads one message at a time (Count: 1) to ensure strict sequential processing.
-		Block:    300 * time.Second,        // block for 5 min
+		Count:    16,
+		Block:    300 * time.Second, // block for 5 min
 		NoAck:    false,
 	}
 

@@ -27,6 +27,3 @@ FROM alpine:3.19
 
 # Copy the binary from the build stage
 COPY --from=compiler /gopath/src/realtime /go/bin/realtime
-
-# Set the entrypoint to the binary
-ENTRYPOINT ["/go/bin/realtime"]

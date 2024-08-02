@@ -55,7 +55,7 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	stream := streamredis.NewRedisMessageStreamClient(redisClient)
 	idGenerator, err := sonyflake.NewSonyFlake()
 	if err != nil {
-		return nil, fmt.Errorf("failed to  new SonyFlake: %v", err)
+		return nil, fmt.Errorf("failed to new SonyFlake: %v", err)
 	}
 
 	realtimeController, err := realtime.NewRealtimeController(cache, stream, idGenerator)

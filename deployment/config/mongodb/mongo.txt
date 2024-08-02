@@ -1,1 +1,1 @@
-mongodb://mongouser:mongopw@localhost:27017/gsm
+mongodb://mongouser:mongopw@mongo:27017/gsm

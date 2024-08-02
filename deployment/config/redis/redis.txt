@@ -1,0 +1,1 @@
+redis://redisuser:redispw@redis:6379
