@@ -65,6 +65,6 @@ func (c *redisClient) CreateSubscription(ctx context.Context, xGroupID string, c
 	return c.Subscription(xGroupID, cfg), nil
 }
 
-func (c *redisClient) DeleteSubscription(ctx context.Context, xGroupID string) error {
-	return nil
+func (c *redisClient) DeleteSubscription(ctx context.Context, topicID, xGroupID string) error {
+	return c.client.XGroupDestroy(ctx, topicID, xGroupID).Err()
 }

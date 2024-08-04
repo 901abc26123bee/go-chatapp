@@ -169,3 +169,11 @@ ws://localhost:8081/api/realtime/v1/chatroom/stream?room_id="test"
 
 ### mongodb
 https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up
+
+
+### web
+https://stackoverflow.com/questions/48712923/where-to-store-a-jwt-token-properly-and-safely-in-a-web-based-application
+
+- localStorage - data persists until explicitly deleted. Changes made are saved and available for all current and future visits to the site.
+
+- sessionStorage - Changes made are saved and available for the current page, as well as future visits to the site on the same window. Once the window is closed, the storage is deleted.

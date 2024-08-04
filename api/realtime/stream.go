@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -46,7 +45,7 @@ var (
 	}
 )
 
-const wsTimeoutDuration = 300 * time.Second
+// const wsTimeoutDuration = 300 * time.Second
 
 func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter) {
 	// Upgrade initial http request to a WebSocket
@@ -57,14 +56,14 @@ func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.
 	defer ws.Close()
 
 	// set websocket connection timeout
-	err = ws.SetReadDeadline(time.Now().Add(wsTimeoutDuration))
-	if err != nil {
-		log.Errorf("failed to set read deadline: %v", err)
-	}
-	err = ws.SetWriteDeadline(time.Now().Add(wsTimeoutDuration))
-	if err != nil {
-		log.Errorf("failed to set write deadline:: %v", err)
-	}
+	// err = ws.SetReadDeadline(time.Now().Add(wsTimeoutDuration))
+	// if err != nil {
+	// 	log.Errorf("failed to set read deadline: %v", err)
+	// }
+	// err = ws.SetWriteDeadline(time.Now().Add(wsTimeoutDuration))
+	// if err != nil {
+	// 	log.Errorf("failed to set write deadline:: %v", err)
+	// }
 	ctx := r.Context()
 
 	// parse chat room id and token
@@ -72,13 +71,6 @@ func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.
 	chatroomID := queryParams.RoomID
 	if chatroomID == "" {
 		log.Errorf("empty room-id parameter")
-		return
-	}
-
-	// set user online in redis
-	key := fmt.Sprintf("chatroom:%s:online:%s", chatroomID, userID)
-	if err = impl.redisClient.Set(ctx, key, true, 600*time.Second); err != nil {
-		log.Errorf("failed to set user online in redis: %v", err)
 		return
 	}
 
@@ -91,21 +83,31 @@ func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.
 	}
 
 	// create subscription of topic channel if not exist
-	subscriptionID := fmt.Sprintf("streamSubscription:%s:%s", chatroomID, userID)
-	sub, err := impl.streamClient.CreateSubscription(ctx, subscriptionID, &stream.SubscriptionConfig{
+	subID := fmt.Sprintf("streamSubscription:%s:%s", chatroomID, userID)
+	subConfig := &stream.SubscriptionConfig{
 		Topic:       impl.streamClient.Topic(topicID),
 		TopicID:     topicID,
 		ReadStartID: "0", // TODO
-	})
-	if err != nil {
-		log.Errorf("failed to create subscription to stream topic: %v", err)
-		return
 	}
-	defer func() {
-		if err := impl.streamClient.DeleteSubscription(context.Background(), subscriptionID); err != nil {
-			log.Errorf("failed to delete subscription %s: %v", subscriptionID, err)
+	// TODO: if brrowser
+	subscription := impl.streamClient.Subscription(subID, subConfig)
+	if exist, err := subscription.Exists(ctx); err != nil {
+		log.Errorf("failed to check if subscription already exist in topic: %v", err)
+		return
+	} else if !exist {
+		if sub, err := impl.streamClient.CreateSubscription(ctx, subID, subConfig); err != nil {
+			log.Errorf("failed to create subscription to stream topic: %v", err)
+			return
 		} else {
-			log.Infof("successfully delete subscription %s", subscriptionID)
+			subscription = sub
+		}
+	}
+	// defer delete subscription for topic
+	defer func() {
+		if err := impl.streamClient.DeleteSubscription(context.Background(), topicID, subID); err != nil {
+			log.Errorf("failed to delete subscription %s: %v", subID, err)
+		} else {
+			log.Infof("successfully delete subscription %s", subID)
 		}
 	}()
 
@@ -113,7 +115,7 @@ func (impl *connectService) HandleWebSocketStreamConnect(userID string, r *http.
 	// channel to signal goroutine stop
 	stopChan := make(chan struct{})
 	go func() {
-		if err := impl.listenToStream(ctx, ws, sub, subscriptionID, stopChan); err != nil {
+		if err := impl.listenToStream(ctx, ws, subscription, subID, stopChan); err != nil {
 			log.Errorf("failed to listenToStream: %v", err)
 		}
 		log.Infof("listenToStream closed for client %s", ws.RemoteAddr().String())
@@ -188,18 +190,9 @@ func (impl *connectService) listenToStream(ctx context.Context, conn *websocket.
 		log.Infof("successfully sending message to ws client: %+v ", resp)
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			log.Info("context canceled")
-			return nil
-		case <-stopChan:
-			log.Info("receive stop signal in listenToStream")
-			return nil
-		default:
-			if err := sub.Receive(ctx, h); err != nil {
-				return errors.Errorf("failed to receive message from stream subscription: %v", err)
-			}
-		}
+	if err := sub.Receive(ctx, h, stopChan); err != nil {
+		return errors.Errorf("failed to receive message from stream subscription: %v", err)
 	}
+
+	return nil
 }

@@ -146,8 +146,8 @@
                 document.getElementById('loginResponse').textContent = 'Login failed: ' + (result.error || response.statusText);
             } else {
                 document.getElementById('loginResponse').textContent = 'Login successful!';
-                // Store the token in localStorage
-                localStorage.setItem('access-token', result.Token);
+                // Store the token in sessionStorage
+                sessionStorage.setItem('access-token', result.Token);
             }
         } catch (error) {
             document.getElementById('loginResponse').textContent = 'Login failed: ' + error.message;

@@ -22,7 +22,7 @@
     <script>
         let socket;
         let username;
-        const token = localStorage.getItem('access-token');
+        const token = sessionStorage.getItem('access-token');
 
         function joinChat() {
             if (token == "") {

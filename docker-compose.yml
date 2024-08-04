@@ -56,60 +56,60 @@ services:
   #   volumes:
   #     - minio_data:/data
   #   command: server /data --console-address ":9001"
-  nginx:
-    build:
-      context: .
-      dockerfile: ./deployment/dockerfile/nginx.Dockerfile
-    container_name: gsm_nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./deployment/config/nginx/nginx.config:/etc/nginx/nginx.config
-      - ./web:/usr/share/nginx/html  # Map the frontend build(web) directory
-    links:
-      - account
-      - realtime
-    depends_on:
-      - account
-      - realtime
-  account:
-    build:
-      context: .
-      dockerfile: ./deployment/dockerfile/account.Dockerfile
-    container_name: gsm_account
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./deployment/config/db/postgres.txt:/deployment/config/db/postgres.txt
-      - ./deployment/config/redis/redis.txt:/deployment/config/redis/redis.txt
-      - ./deployment/config/mongodb/mongo.txt:/deployment/config/mongodb/mongo.txt
-    command: ["/go/bin/account", "-sql", "/deployment/config/db/postgres.txt",
-                "-redis", "/deployment/config/redis/redis.txt",
-                "-mongodb", "/deployment/config/mongodb/mongo.txt",
-                "-jwt", "jwtsecret",
-                "--port", ":8080"]
-    depends_on:
-      - redis
-      - mongo
-  realtime:
-    build:
-      context: .
-      dockerfile: ./deployment/dockerfile/realtime.Dockerfile
-    container_name: gsm_realtime
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./deployment/config/db/postgres.txt:/deployment/config/db/postgres.txt
-      - ./deployment/config/redis/redis.txt:/deployment/config/redis/redis.txt
-      - ./deployment/config/mongodb/mongo.txt:/deployment/config/mongodb/mongo.txt
-    command: ["/go/bin/realtime", "-sql", "/deployment/config/db/postgres.txt",
-                "-redis", "/deployment/config/redis/redis.txt",
-                "-mongodb", "/deployment/config/mongodb/mongo.txt",
-                "-jwt", "jwtsecret",
-                "--port", ":8081"]
-    depends_on:
-      - redis
-      - mongo
+  # nginx:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deployment/dockerfile/nginx.Dockerfile
+  #   container_name: gsm_nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./deployment/config/nginx/nginx.config:/etc/nginx/nginx.config
+  #     - ./web:/usr/share/nginx/html  # Map the frontend build(web) directory
+  #   links:
+  #     - account
+  #     - realtime
+  #   depends_on:
+  #     - account
+  #     - realtime
+  # account:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deployment/dockerfile/account.Dockerfile
+  #   container_name: gsm_account
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./deployment/config/db/postgres.txt:/deployment/config/db/postgres.txt
+  #     - ./deployment/config/redis/redis.txt:/deployment/config/redis/redis.txt
+  #     - ./deployment/config/mongodb/mongo.txt:/deployment/config/mongodb/mongo.txt
+  #   command: ["/go/bin/account", "-sql", "/deployment/config/db/postgres.txt",
+  #               "-redis", "/deployment/config/redis/redis.txt",
+  #               "-mongodb", "/deployment/config/mongodb/mongo.txt",
+  #               "-jwt", "jwtsecret",
+  #               "--port", ":8080"]
+  #   depends_on:
+  #     - redis
+  #     - mongo
+  # realtime:
+  #   build:
+  #     context: .
+  #     dockerfile: ./deployment/dockerfile/realtime.Dockerfile
+  #   container_name: gsm_realtime
+  #   ports:
+  #     - "8081:8081"
+  #   volumes:
+  #     - ./deployment/config/db/postgres.txt:/deployment/config/db/postgres.txt
+  #     - ./deployment/config/redis/redis.txt:/deployment/config/redis/redis.txt
+  #     - ./deployment/config/mongodb/mongo.txt:/deployment/config/mongodb/mongo.txt
+  #   command: ["/go/bin/realtime", "-sql", "/deployment/config/db/postgres.txt",
+  #               "-redis", "/deployment/config/redis/redis.txt",
+  #               "-mongodb", "/deployment/config/mongodb/mongo.txt",
+  #               "-jwt", "jwtsecret",
+  #               "--port", ":8081"]
+  #   depends_on:
+  #     - redis
+  #     - mongo
 volumes:
   # postgres_data:
   mongo_data:

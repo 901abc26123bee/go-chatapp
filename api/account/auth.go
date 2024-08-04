@@ -2,6 +2,8 @@ package account
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -58,6 +60,12 @@ func (impl *authService) Login(ctx context.Context, req *LoginRequest) (*LoginRe
 	token, _, err := jwtext.CreateAccessToken(user.ID, impl.jwtSecret, nil, jwtext.AccessTokenDuration)
 	if err != nil {
 		return nil, errors.Errorf("failed to create access token: %v", err)
+	}
+
+	// set user online in redis
+	key := fmt.Sprintf("online:%s", user.ID)
+	if err = impl.redisClient.Set(ctx, key, true, 600*time.Second); err != nil {
+		return nil, errors.Errorf("failed to set user online in redis: %v", err)
 	}
 
 	// TODO: create refresh token and store
