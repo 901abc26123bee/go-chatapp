@@ -23,8 +23,8 @@ type realtimeController struct {
 	redisClient       cache.Client
 	streamClient      stream.Client
 	idGenerator       sonyflake.IDGenerator
-	connectService    ConnectService
 	streamChatService StreamChatService
+	chatRoomService   ChatRoomService
 }
 
 // NewRealtimeController creates a new realtime controller
@@ -33,8 +33,8 @@ func NewRealtimeController(redisClient cache.Client, streamClient stream.Client,
 		redisClient:       redisClient,
 		streamClient:      streamClient,
 		idGenerator:       idGenerator,
-		connectService:    NewConnectService(redisClient, streamClient, idGenerator),
-		streamChatService: NewStreamChatService(redisClient),
+		streamChatService: NewStreamChatService(redisClient, streamClient, idGenerator),
+		chatRoomService:   NewChatRoomService(redisClient),
 	}, nil
 }
 
@@ -56,7 +56,7 @@ func (impl *realtimeController) HandleWebSocketStreamConnect(ctx *gin.Context) {
 		ctx.Error(errors.NewError(errors.InternalServerError, "failed to convert jwt claim id to string"))
 		return
 	}
-	impl.connectService.HandleWebSocketStreamConnect(userID, ctx.Request, ctx.Writer)
+	impl.streamChatService.HandleWebSocketStreamConnect(userID, ctx.Request, ctx.Writer)
 }
 
 func (impl *realtimeController) CreateChatRoom(ctx *gin.Context) {
