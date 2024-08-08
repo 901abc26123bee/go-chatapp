@@ -2,7 +2,6 @@ package realtime
 
 import (
 	"fmt"
-	"net/url"
 
 	"gsm/pkg/util/convert"
 )
@@ -15,29 +14,32 @@ const (
 	ActionChatRoomMessage ChatRoomAction = "CHAT_ROOM_MESSAGE"
 )
 
-// StreamChatRoomQueryParams defines query params of api HandleWebSocketStreamConnect
-type StreamChatRoomQueryParams struct {
-	Action string
-	RoomID string `form:"room_id" json:"room_id"`
+// // StreamChatRoomQueryParams defines query params of api HandleWebSocketStreamConnect
+// type StreamChatRoomQueryParams struct {
+// 	Action string
+// 	RoomID string `form:"room_id" json:"room_id"`
+// }
+
+// // BindToStreamChatRoomQueryParams bind queryParams to StreamChatRoomQueryParams
+// func BindToStreamChatRoomQueryParams(queryParams url.Values) (params *StreamChatRoomQueryParams) {
+// 	return &StreamChatRoomQueryParams{
+// 		RoomID: queryParams.Get("room_id"),
+// 	}
+// }
+
+// StreamChatRoomMessageResponse defines a stream chat room message response of api HandleWebSocketStreamConnect
+type StreamChatRoomMessageResponse struct {
+	ID         uint64 `json:"id"`
+	Chat       string `json:"chat"`
+	SenderID   string `json:"sender_id"`
+	SenderName string `json:"sender_name"`
+	RoomID     string `json:"room_id"`
+	Status     string
+	ErrCode    string `json:"err_code"`
+	ErrMsg     string `json:"err_msg"`
 }
 
-// BindToStreamChatRoomQueryParams bind queryParams to StreamChatRoomQueryParams
-func BindToStreamChatRoomQueryParams(queryParams url.Values) (params *StreamChatRoomQueryParams) {
-	return &StreamChatRoomQueryParams{
-		RoomID: queryParams.Get("room_id"),
-	}
-}
-
-// StreamChatRoomResponse defines resp body of api HandleWebSocketStreamConnect
-type StreamChatRoomResponse struct {
-	ID       uint64 `json:"id"`
-	Chat     string `json:"chat"`
-	UserID   string `json:"user_id"`
-	UserName string `json:"user_name"`
-	RoomID   string `json:"room_id"`
-}
-
-func (resp *StreamChatRoomResponse) convertRedisDataTo(attr map[string]interface{}) error {
+func (resp *StreamChatRoomMessageResponse) convertFromKeyValuePairs(attr map[string]interface{}) error {
 	if resp == nil {
 		return fmt.Errorf("mapping struct should not be nil")
 	}
@@ -55,33 +57,34 @@ func (resp *StreamChatRoomResponse) convertRedisDataTo(attr map[string]interface
 	if v, ok := attr["chat"]; ok {
 		resp.Chat = fmt.Sprintf("%s", v)
 	}
-	if v, ok := attr["user_id"]; ok {
-		resp.UserID = fmt.Sprintf("%s", v)
+	if v, ok := attr["sender_id"]; ok {
+		resp.SenderID = fmt.Sprintf("%s", v)
 	}
-	if v, ok := attr["user_name"]; ok {
-		resp.UserName = fmt.Sprintf("%s", v)
-	}
-	if v, ok := attr["room_id"]; ok {
-		resp.RoomID = fmt.Sprintf("%s", v)
+	if v, ok := attr["sender_name"]; ok {
+		resp.SenderName = fmt.Sprintf("%s", v)
 	}
 
 	return nil
 }
 
-// StreamChatRoomMessage Define a chat room message object
-type StreamChatRoomMessage struct {
-	ID     string `json:"id"`
-	RoomID string `json:"room_id"`
-	UserID string `json:"user_id"`
-	Chat   string `json:"chat"`
+// StreamChatRoomRequestMessage define a stream chat room message request of api HandleWebSocketStreamConnect
+type StreamChatRoomMessageRequest struct {
+	Action   ChatRoomAction `json:"action"`
+	ID       string         `json:"id"`
+	RoomID   string         `json:"room_id"`
+	SenderID string         `json:"sender_id"`
+	Chat     string         `json:"chat"`
 }
 
-func (msg *StreamChatRoomMessage) convertToKeyValuePair() map[string]interface{} {
+type StreamChatRoomMessageData struct {
+}
+
+func (msg *StreamChatRoomMessageRequest) convertToKeyValuePairs() map[string]interface{} {
 	return map[string]interface{}{
-		"id":      msg.ID,
-		"room_id": msg.RoomID,
-		"user_id": msg.UserID,
-		"chat":    msg.Chat,
+		"id":        msg.ID,
+		"room_id":   msg.RoomID,
+		"sender_id": msg.SenderID,
+		"chat":      msg.Chat,
 	}
 }
 

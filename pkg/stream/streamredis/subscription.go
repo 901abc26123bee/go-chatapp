@@ -84,3 +84,10 @@ func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context,
 		}
 	}
 }
+
+func (s *redisSubscription) GetSubID() string {
+	if s != nil {
+		return s.xGroupID
+	}
+	return ""
+}

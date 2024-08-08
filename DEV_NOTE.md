@@ -147,11 +147,11 @@ https://github.com/redis/go-redis/discussions/2241
 
 In the XGroupCreateMkStream command, the $ symbol is used to specify the starting point for the consumer group. 
 $ Symbol in XGroupCreateMkStream
-```
+```sh
 $: This indicates that the consumer group should start reading new messages added to the stream after the group is created. In other words, it will not read any historical messages that were already in the stream before the group was created. It only processes messages that are appended to the stream after the group has been set up.
 ```
 Detailed Explanation
-```
+```sh
 When you create a consumer group with XGroupCreateMkStream, you provide the stream name, group name, and a starting point (usually $ or 0). The starting point determines from where the consumer group will start processing messages:
 
   $ (Dollar Sign): Start from new messages added to the stream after the group is created. This is commonly used when you want to process only new messages from that point onward, ignoring any messages that were already present in the stream.
@@ -161,11 +161,12 @@ When you create a consumer group with XGroupCreateMkStream, you provide the stre
 
 
 
-ws://localhost:8081/api/realtime/v1/chatroom/stream?room_id="test"
 
-{"room_id":"test-stream-chatroom","user_id":"user_id","chat":"fdewfcewf"}
-{"id":"523973393041588252","room_id":"","user_id":"","chat":"fdewfcewf"}
+ws://localhost:8081/api/realtime/v1/chatroom/stream?&access_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJnc20tZGV2IiwiZXhwIjoxNzIzMDI2NzM0LCJpYXQiOjE3MjMwMjMxMzQsImlzcyI6ImdzbS1kZXYiLCJqdGkiOiIwMUo0OFk2QVRWVk1TUEtKVFJGOEsxMVRUNSIsIm5iZiI6MTcyMzAyMzEzNCwic3ViIjoiYWNjZXNzX3Rva2VuIn0.xfb8QhJQyeBUcxRds2-9K7Q-q-EVmT_eT8WL6QSAIsk
 
+{"room_id":"test1","action":"JOIN_CHAT_ROOM"}
+{"room_id":"test1","action":"LEAVE_CHAT_ROOM"}
+{"room_id":"test1","action":"CHAT_ROOM_MESSAGE","chat":"hello"}
 
 ### mongodb
 https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up
@@ -177,3 +178,8 @@ https://stackoverflow.com/questions/48712923/where-to-store-a-jwt-token-properly
 - localStorage - data persists until explicitly deleted. Changes made are saved and available for all current and future visits to the site.
 
 - sessionStorage - Changes made are saved and available for the current page, as well as future visits to the site on the same window. Once the window is closed, the storage is deleted.
+
+### websocket
+When upgrading an HTTP connection to a WebSocket, the initial HTTP request can include query parameters, which are typically used for authentication or passing configuration details. These query parameters are included in the HTTP GET request used to initiate the WebSocket handshake.
+
+However, these query parameters are only available during the initial upgrade request. Once the connection is upgraded to a WebSocket, it becomes a stateful, full-duplex connection where messages are sent and received as binary or text frames. The concept of query parameters doesn't directly apply to the messages sent over this connectio

@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/oklog/ulid/v2"
-
 	"gsm/pkg/cache"
 	"gsm/pkg/errors"
+	"gsm/pkg/stream"
 )
 
 // streamChatService defines the implementation of ChatService interface
 type streamChatService struct {
-	redisClient cache.Client
+	redisClient  cache.Client
+	streamClient stream.Client
 }
 
 // StreamChatService defines the chat service interface
 type StreamChatService interface {
-	CreateChatRoom(ctx context.Context) error
+	CreateChatRoom(ctx context.Context, req *CreateChatRoomRequest) error
+	DeleteChatRoom(ctx context.Context) error
 	QueryChatRoomHistory(ctx context.Context) error
 }
 
@@ -28,13 +29,24 @@ func NewStreamChatService(redisClient cache.Client) StreamChatService {
 	}
 }
 
-func (impl *streamChatService) CreateChatRoom(ctx context.Context) error {
-	chatroomID := ulid.Make().String()
-	key := fmt.Sprintf("chatroom:%s", chatroomID)
-	// set expiration to 0 indicates the key will not expire
-	if err := impl.redisClient.Set(ctx, key, true, 0); err != nil {
-		return errors.Errorf("failed to set user online in redis: %v\n", err)
+type CreateChatRoomRequest struct {
+	ChatRoomID string `json:"room_id"`
+}
+
+func (impl *streamChatService) CreateChatRoom(ctx context.Context, req *CreateChatRoomRequest) error {
+	// TODO: create chatroom in db
+
+	// create stream topic for chatroom when chat room is created for simplicity
+	topicID := fmt.Sprintf("streamTopic:%s", req.ChatRoomID)
+	_, err := impl.streamClient.CreateTopic(ctx, topicID)
+	if err != nil {
+		return errors.Errorf("failed to create stream topic: %v", err)
 	}
+
+	return nil
+}
+
+func (impl *streamChatService) DeleteChatRoom(ctx context.Context) error {
 	return nil
 }
 

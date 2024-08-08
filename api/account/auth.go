@@ -75,6 +75,7 @@ func (impl *authService) Login(ctx context.Context, req *LoginRequest) (*LoginRe
 
 func (impl *authService) Logout(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
 	// TODO: delete refresh token
+	// TODO: delete all subscription for user
 	return nil, nil
 }
 

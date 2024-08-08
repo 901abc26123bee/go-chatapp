@@ -3,129 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <p><a href="index.html">Home</a></p>
-
     <title>Chat Room</title>
     <style>
         body {
             font-family: Arial, sans-serif;
         }
-        #chat {
+        .chat-container {
+            width: 300px;
+            margin: 0 auto;
+        }
+        .chat-box {
             border: 1px solid #ccc;
             padding: 10px;
             height: 300px;
             overflow-y: auto;
         }
-        #message {
-            width: calc(100% - 120px);
-        }
-        #sendButton {
-            width: 100px;
-        }
-        #status {
-            margin: 10px 0;
-            color: green;
+        .error {
+            color: red;
         }
     </style>
 </head>
 <body>
-    <h1>Chat Room</h1>
-    <label for="roomId">Enter Chat Room ID:</label>
-    <input type="text" id="roomId" />
-    <button id="joinButton">Join</button>
 
+<div class="chat-container">
+    <h2>Chat Room</h2>
+    <p><a href="index.html">Home</a></p>
+    <input type="text" id="chatRoomId" placeholder="Enter chat room ID">
+    <button onclick="joinChatRoom()">Join Room</button>
+    <button onclick="leaveChatRoom()">Leave Room</button>
+    
+    <div id="chatBox" class="chat-box"></div>
+    
+    <input type="text" id="message" placeholder="Enter message">
+    <button onclick="sendMessage()">Send Message</button>
+    
     <div id="status">Disconnected</div>
-    <div id="chat"></div>
+    <div id="error" class="error"></div>
+</div>
 
-    <input type="text" id="message" placeholder="Type a message..." />
-    <button id="sendButton">Send</button>
+<script>
+    const statusDiv = document.getElementById('status');
+    let socket;
+    let currentRoomId;
+    const token = sessionStorage.getItem('access-token');
+    const encodedToken = encodeURIComponent(token);
 
-    <script>
-        let ws;
-        const chatDiv = document.getElementById('chat');
-        const messageInput = document.getElementById('message');
-        const roomIdInput = document.getElementById('roomId');
-        const joinButton = document.getElementById('joinButton');
-        const sendButton = document.getElementById('sendButton');
-        const statusDiv = document.getElementById('status');
-        let currentRoomId = '';
-        const userID = Math.random().toString(36).substring(2, 15); // Generate a unique user ID
-        const token = sessionStorage.getItem('access-token');
+    function initializeWebSocket() {
+        const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?&access_token=${encodedToken}`
+        socket = new WebSocket(url);
 
-        function updateStatus(status) {
-            statusDiv.textContent = status;
-            statusDiv.style.color = status === 'Connected' ? 'green' : 'red';
+        socket.onopen = function () {
+            console.log('WebSocket connection opened.');
+            updateStatus('Connected');
+        };
+
+        socket.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+            displayMessage(`${message.sender_id}: ${message.chat}`);
+        };
+
+        socket.onerror = function (error) {
+            displayError('WebSocket error: ' + error.message);
+        };
+
+        socket.onclose = function () {
+            displayError('WebSocket connection closed.');
+        };
+    }
+
+    function joinChatRoom() {
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        if (!chatRoomId) {
+            displayError('Please enter a chat room ID.');
+            return;
         }
-
-        function connectWebSocket(roomId) {
-            if (ws) {
-                ws.close();
-            }
-
-            // clear the chat messages
-            chatDiv.innerHTML = '';
-            currentRoomId = roomId; // store the current room ID
-            if (token == "") {
-                console.log('user not login');
-            }
-            const encodedToken = encodeURIComponent(token);
-            const encodedRoomId = encodeURIComponent(roomId);
-            const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?room_id=${encodedRoomId}&access_token=${encodedToken}`;
-            ws = new WebSocket(url);
-            ws.onopen = () => {
-                if (encodedRoomId != "" && encodedToken != "") {
-                    console.log('WebSocket connection opened');
-                    ws.send(JSON.stringify({}));
-                    updateStatus('Connected');
-                } else {
-                    console.error('failed to connect to ws');
-                }
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data && data.chat) {
-                    chatDiv.innerHTML += `<p><strong>${data.user_name}:</strong> ${data.chat}</p>`;
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
-                }
-            };
-
-            ws.onclose = () => {
-                console.log('WebSocket connection closed');
-                updateStatus('Disconnected');
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                updateStatus('Disconnected');
-            };
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const joinMessage = JSON.stringify({
+                room_id: chatRoomId,
+                action: "JOIN_CHAT_ROOM"
+            });
+            socket.send(joinMessage);
+            currentRoomId = chatRoomId;
+            document.getElementById('chatBox').innerHTML = '';
+            displayError('');
+        } else {
+            displayError('WebSocket connection is not open.');
         }
+    }
 
-        joinButton.addEventListener('click', () => {
-            const roomId = roomIdInput.value.trim();
-            if (roomId) {
-                connectWebSocket(roomId);
-            }
-        });
+    function leaveChatRoom() {
+        if (!currentRoomId) {
+            displayError('No chat room joined.');
+            return;
+        }
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const leaveMessage = JSON.stringify({
+                room_id: currentRoomId,
+                sender_id: "01J48Y6ATVVMSPKJTRF8K11TT5",
+                action: "LEAVE_CHAT_ROOM"
+            });
+            socket.send(leaveMessage);
+            currentRoomId = null;
+            document.getElementById('chatBox').innerHTML = '';
+            displayError('');
+        } else {
+            displayError('WebSocket connection is not open.');
+        }
+    }
 
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message && ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ 
-                    user_id: userID,
-                    room_id: currentRoomId,
-                    chat: message 
-                }));
-                messageInput.value = '';
-            }
-        });
+    function sendMessage() {
+        const message = document.getElementById('message').value;
+        if (!message || !currentRoomId) {
+            displayError('Please join a chat room and enter a message.');
+            return;
+        }
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const chatMessage = JSON.stringify({
+                room_id: currentRoomId,
+                action: "CHAT_ROOM_MESSAGE",
+                chat: message
+            });
+            socket.send(chatMessage);
+            document.getElementById('message').value = '';
+        } else {
+            displayError('WebSocket connection is not open.');
+        }
+    }
 
-        window.addEventListener('beforeunload', () => {
-            if (ws) {
-                ws.close();
-            }
-        });
-    </script>
+    function displayMessage(message) {
+        const data = JSON.parse(event.data);
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML += `<p><strong>${data.sender_id}:</strong> ${data.chat}</p>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function displayError(error) {
+        document.getElementById('error').innerText = error;
+    }
+
+    function updateStatus(status) {
+        statusDiv.textContent = status;
+        statusDiv.style.color = status === 'Connected' ? 'green' : 'red';
+    }
+
+    window.addEventListener('load', function(event) {
+        initializeWebSocket();
+    });
+
+    window.addEventListener('beforeunload', function(event) {
+        closeConnection();
+    });
+
+    window.addEventListener('unload', function(event) {
+        closeConnection();
+    });
+    function closeConnection() {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.close();
+            console.log('WebSocket connection closed manually.');
+        }
+    }
+
+</script>
+
 </body>
 </html>

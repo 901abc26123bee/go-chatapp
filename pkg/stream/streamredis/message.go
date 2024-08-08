@@ -14,6 +14,6 @@ type redisAcker struct {
 }
 
 func (acker *redisAcker) Ack(ctx context.Context) error {
-	res := acker.client.XAck(ctx, acker.topicID, acker.topicID, acker.messageIDs...)
+	res := acker.client.XAck(ctx, acker.topicID, acker.xGroup, acker.messageIDs...)
 	return res.Err()
 }

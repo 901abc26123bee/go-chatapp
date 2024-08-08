@@ -8,4 +8,6 @@ type Subscription interface {
 	Exists(ctx context.Context) (bool, error)
 	// Receive calls fto handle messages receive from the subscription.
 	Receive(ctx context.Context, f func(context.Context, *Message), stopChan chan struct{}) error
+	// get sub id
+	GetSubID() string
 }
