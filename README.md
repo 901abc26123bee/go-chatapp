@@ -34,4 +34,7 @@ http://gsm-dev/
 ```
 
 3. display
-[![Watch the video](https://github.com/901abc26123bee/go-chatapp/tree/master/static/video/go-chat-room-display-720p.mov)](https://github.com/901abc26123bee/go-chatapp/tree/master/static/video/go-chat-room-display-720p.mov)
+
+[![image display](./static/image/chat-room.png)](./static/image/chat-room.png)
+
+[![Watch the video](./static/video/go-chat-room-display-720p.mov)](./static/video/go-chat-room-display-720p.mov)
