@@ -28,6 +28,12 @@ const (
 	// ...
 )
 
+// defines websocket errors
+const (
+	MessageHandleError ErrCode = iota + 3000
+	// ...
+)
+
 // ErrContent defines customized errors
 type ErrContent struct {
 	StatusCode int           `json:"status_code"`
@@ -51,6 +57,9 @@ var (
 	errTokenExpired = *newErrContent(http.StatusUnauthorized, TokenExpired, "token is expired")
 	errTokenEmpty   = *newErrContent(http.StatusUnauthorized, TokenEmpty, "token is empty")
 	errTokenInvalid = *newErrContent(http.StatusUnauthorized, TokenInvalid, "token is invalid")
+
+	// errors for 3000(websocket) prefix
+	errMessageHandleError = *newErrContent(http.StatusInternalServerError, MessageHandleError, "failed to handle websocket message")
 )
 
 var errorPool = map[ErrCode]ErrContent{
@@ -66,6 +75,9 @@ var errorPool = map[ErrCode]ErrContent{
 	TokenEmpty:   errTokenEmpty,
 	TokenExpired: errTokenExpired,
 	TokenInvalid: errTokenInvalid,
+
+	// errors for 3000(websocket) prefix
+	MessageHandleError: errMessageHandleError,
 }
 
 func newErrContent(statusCode int, code ErrCode, msg string) *ErrContent {

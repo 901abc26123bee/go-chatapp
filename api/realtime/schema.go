@@ -1,8 +1,11 @@
 package realtime
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
+	"gsm/pkg/errors"
 	"gsm/pkg/util/convert"
 )
 
@@ -14,32 +17,47 @@ const (
 	ActionChatRoomMessage ChatRoomAction = "CHAT_ROOM_MESSAGE"
 )
 
-// // StreamChatRoomQueryParams defines query params of api HandleWebSocketStreamConnect
-// type StreamChatRoomQueryParams struct {
-// 	Action string
-// 	RoomID string `form:"room_id" json:"room_id"`
-// }
+type MessageStatus string
 
-// // BindToStreamChatRoomQueryParams bind queryParams to StreamChatRoomQueryParams
-// func BindToStreamChatRoomQueryParams(queryParams url.Values) (params *StreamChatRoomQueryParams) {
-// 	return &StreamChatRoomQueryParams{
-// 		RoomID: queryParams.Get("room_id"),
-// 	}
-// }
+const (
+	MessageStatusSuccess MessageStatus = "SUCCESS"
+	MessageStatusError   MessageStatus = "ERROR"
+)
 
-// StreamChatRoomMessageResponse defines a stream chat room message response of api HandleWebSocketStreamConnect
-type StreamChatRoomMessageResponse struct {
-	ID         uint64 `json:"id"`
-	Chat       string `json:"chat"`
-	SenderID   string `json:"sender_id"`
-	SenderName string `json:"sender_name"`
-	RoomID     string `json:"room_id"`
-	Status     string
-	ErrCode    string `json:"err_code"`
-	ErrMsg     string `json:"err_msg"`
+type WSMessageType string
+
+const (
+	// req resp
+	WSMessageTypeChat           WSMessageType = "CHAT"
+	WSMessageTypeChatRoomAction WSMessageType = "CHAT_ROOM_ACTION"
+	WSMessageACK                WSMessageType = "ACK"
+
+	// stream receiving
+	WSMessageTypeChatStream WSMessageType = "CHAT_STREAM"
+)
+
+// StreamWSMessageResponse defines a stream chat room message response of api HandleWebSocketStreamConnect
+type StreamWSMessageResponse struct {
+	Type    WSMessageType   `json:"type"`
+	Status  MessageStatus   `json:"status"`
+	ErrCode errors.ErrCode  `json:"err_code"`
+	ErrMsg  string          `json:"err_msg"`
+	Payload json.RawMessage `json:"payload"` // Allows for flexible payloads
 }
 
-func (resp *StreamChatRoomMessageResponse) convertFromKeyValuePairs(attr map[string]interface{}) error {
+// ChatRoomMessageResponse defines a chat room message response
+type ChatRoomMessageResponse struct {
+	ID       uint64 `json:"id"`
+	RoomID   string `json:"room_id"`
+	Chat     string `json:"chat"`
+	SenderID string `json:"sender_id"`
+}
+
+// ChatRoomActionResponse defines a chat room action response
+type ChatRoomActionResponse struct {
+}
+
+func (resp *ChatRoomMessageResponse) convertFromKeyValuePairs(attr map[string]interface{}) error {
 	if resp == nil {
 		return fmt.Errorf("mapping struct should not be nil")
 	}
@@ -60,40 +78,33 @@ func (resp *StreamChatRoomMessageResponse) convertFromKeyValuePairs(attr map[str
 	if v, ok := attr["sender_id"]; ok {
 		resp.SenderID = fmt.Sprintf("%s", v)
 	}
-	if v, ok := attr["sender_name"]; ok {
-		resp.SenderName = fmt.Sprintf("%s", v)
-	}
 
 	return nil
 }
 
 // StreamChatRoomRequestMessage define a stream chat room message request of api HandleWebSocketStreamConnect
-type StreamChatRoomMessageRequest struct {
-	Action   ChatRoomAction `json:"action"`
-	ID       string         `json:"id"`
-	RoomID   string         `json:"room_id"`
-	SenderID string         `json:"sender_id"`
-	Chat     string         `json:"chat"`
+type StreamWSMessageRequest struct {
+	Type    WSMessageType   `json:"type"`
+	Payload json.RawMessage `json:"payload"` // Allows for flexible payloads
 }
 
-type StreamChatRoomMessageData struct {
+type ChatRoomMessageRequest struct {
+	ID     string `json:"id"`
+	RoomID string `json:"room_id"`
+	Chat   string `json:"chat"`
 }
 
-func (msg *StreamChatRoomMessageRequest) convertToKeyValuePairs() map[string]interface{} {
+type ChatRoomActionRequest struct {
+	Action ChatRoomAction `json:"action"`
+	RoomID string         `json:"room_id"`
+}
+
+func (msg *ChatRoomMessageRequest) convertToKeyValuePairs(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"id":        msg.ID,
 		"room_id":   msg.RoomID,
-		"sender_id": msg.SenderID,
+		"sender_id": userID,
 		"chat":      msg.Chat,
+		"timestamp": time.Now().Unix(),
 	}
 }
-
-// // Chat Define a chat object
-// type Chat struct {
-// 	ID        string `json:"id"`
-// 	From      string `json:"from"`
-// 	To        string `json:"to"`
-// 	Msg       string `json:"message"`
-// 	MsgType   string `json:"msg_type"`
-// 	Timestamp int64  `json:"timestamp"`
-// }

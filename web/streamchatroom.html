@@ -85,6 +85,7 @@
 <div class="chat-container">
     <h2>Chat Room</h2>
     <p><a href="index.html">Home</a></p>
+    <div id="currentRoomId"></div>
     <input type="text" id="chatRoomId" placeholder="Enter chat room ID">
     <button onclick="joinChatRoom()">Join Room</button>
     <button onclick="leaveChatRoom()">Leave Room</button>
@@ -143,33 +144,41 @@
         }
         if (socket && socket.readyState === WebSocket.OPEN) {
             const joinMessage = JSON.stringify({
-                room_id: chatRoomId,
-                action: "JOIN_CHAT_ROOM"
+                type: "CHAT_ROOM_ACTION",
+                payload: {
+                    action: "JOIN_CHAT_ROOM",
+                    room_id: chatRoomId,
+                }
             });
             socket.send(joinMessage);
-            currentRoomId = chatRoomId;
             document.getElementById('chatBox').innerHTML = '';
             displayError('');
+            currentRoomId = chatRoomId
+            displayCurChatroomID(chatRoomId)
         } else {
             displayError('WebSocket connection is not open.');
         }
     }
 
     function leaveChatRoom() {
-        if (!currentRoomId) {
-            displayError('No chat room joined.');
+        const chatRoomId = document.getElementById('chatRoomId').value;
+        if (!chatRoomId) {
+            displayError('Please enter a chat room ID.');
             return;
         }
         if (socket && socket.readyState === WebSocket.OPEN) {
             const leaveMessage = JSON.stringify({
-                room_id: currentRoomId,
-                sender_id: "01J48Y6ATVVMSPKJTRF8K11TT5",
-                action: "LEAVE_CHAT_ROOM"
+                type: "CHAT_ROOM_ACTION",
+                payload: {
+                    action: "LEAVE_CHAT_ROOM",
+                    room_id: chatRoomId,
+                }
             });
             socket.send(leaveMessage);
-            currentRoomId = null;
             document.getElementById('chatBox').innerHTML = '';
             displayError('');
+            currentRoomId = null
+            displayCurChatroomID('')
         } else {
             displayError('WebSocket connection is not open.');
         }
@@ -183,9 +192,12 @@
         }
         if (socket && socket.readyState === WebSocket.OPEN) {
             const chatMessage = JSON.stringify({
-                room_id: currentRoomId,
-                action: "CHAT_ROOM_MESSAGE",
-                chat: message
+                type: "CHAT",
+                payload: {
+                    room_id: currentRoomId,
+                    action: "CHAT_ROOM_MESSAGE",
+                    chat: message
+                }
             });
             socket.send(chatMessage);
             document.getElementById('message').value = '';
@@ -196,13 +208,20 @@
 
     function displayMessage(message) {
         const data = JSON.parse(event.data);
-        const chatBox = document.getElementById('chatBox');
-        chatBox.innerHTML += `<p><strong>${data.sender_id}:</strong> ${data.chat}</p>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        console.log("data", data)
+        if (data.type == "CHAT_STREAM") {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<p><strong>${data.payload.sender_id}:</strong> ${data.payload.chat}</p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
     }
 
     function displayError(error) {
         document.getElementById('error').innerText = error;
+    }
+
+    function displayCurChatroomID(currentRoomId) {
+        document.getElementById('currentRoomId').innerText = currentRoomId;
     }
 
     function updateStatus(status) {

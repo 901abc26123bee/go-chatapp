@@ -2,6 +2,7 @@ package realtime
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,6 +11,7 @@ import (
 
 	"gsm/pkg/cache"
 	"gsm/pkg/errors"
+	"gsm/pkg/realtime"
 	"gsm/pkg/stream"
 	"gsm/pkg/util/sonyflake"
 )
@@ -26,7 +28,7 @@ type StreamChatService interface {
 	HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter)
 	JoinChatRoom(ctx context.Context, userID, chatRoomID, topicID, subID string) (stream.Subscription, error)
 	LeaveChatRoom(ctx context.Context, topicID string, subID string) error
-	PushMessage(ctx context.Context, chatroomID, userID string, msgReq *StreamChatRoomMessageRequest) error
+	PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequest) error
 }
 
 // NewStreamChatService init the connect service
@@ -38,16 +40,6 @@ func NewStreamChatService(redisClient cache.Client, streamClient stream.Client, 
 	}
 }
 
-var (
-	upgrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool {
-			return true // Allow all origins for simplicity, adjust as needed
-		},
-	}
-)
-
 type changeRoomSub struct {
 	roomID       string
 	subscription stream.Subscription
@@ -56,7 +48,7 @@ type changeRoomSub struct {
 
 func (impl *streamChatService) HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter) {
 	// Upgrade initial http request to a WebSocket
-	ws, err := upgrader.Upgrade(w, r, nil)
+	ws, err := realtime.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Errorf("Error upgrading connection: %v", err)
 	}
@@ -64,25 +56,20 @@ func (impl *streamChatService) HandleWebSocketStreamConnect(userID string, r *ht
 
 	ctx := r.Context()
 
-	impl.handleWebSocketStreamConnectMessage(ctx, ws, userID)
-}
-
-// handleWebSocketStreamConnectMessage manage messages from the WebSocket client and route them to the appropriate handler.
-func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.Context, conn *websocket.Conn, userID string) error {
 	// handle receiving message from chat room
 	changeRoomCh := make(chan changeRoomSub)
-	go impl.receiveMessages(ctx, conn, changeRoomCh, userID)
+	go impl.receiveMessages(ctx, ws, changeRoomCh, userID)
 
 	// handle message request
 	for {
 		select {
 		case <-ctx.Done():
 			log.Info("context canceled")
-			return nil
+			return
 		default:
 			// parse client message request.
-			var msgReq StreamChatRoomMessageRequest
-			err := conn.ReadJSON(&msgReq)
+			var msgReq StreamWSMessageRequest
+			err := ws.ReadJSON(&msgReq)
 			log.Infof("successfully receive message from ws client %+v ", msgReq)
 			if err != nil {
 				// connection closed normally.
@@ -91,42 +78,84 @@ func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.C
 					websocket.CloseGoingAway,
 					websocket.CloseNoStatusReceived) {
 					log.Info("ws connection is closed by client")
-					return nil
 				}
-				return errors.Errorf("failed to read message from ws client: %v", err)
+				log.Errorf("failed to read message from ws client: %v", err)
+				return
 			}
 
-			// check params
-			if msgReq.RoomID == "" {
-				return errors.NewError(errors.InvalidArgument, "empty room_id")
-			}
-
-			topicID := stream.ConstructChatRoomTopicID(msgReq.RoomID)
-			subID := stream.ConstructChatRoomSubscriptionID(msgReq.RoomID, userID)
-			// manage messages from the WebSocket client and route them to the appropriate handler.
-			switch msgReq.Action {
-			case ActionJoinChatRoom:
-				if sub, err := impl.JoinChatRoom(ctx, userID, msgReq.RoomID, topicID, subID); err != nil {
-					return errors.Errorf("failed to join chat room %s", msgReq.RoomID)
-				} else {
-					changeMsg := changeRoomSub{
-						roomID:       msgReq.RoomID,
-						subscription: sub,
-						action:       ActionJoinChatRoom,
-					}
-					changeRoomCh <- changeMsg
+			// handle messages from the WebSocket client and route them to the appropriate handler.
+			if handleErr := impl.handleWebSocketStreamConnectMessage(ctx, msgReq, userID, changeRoomCh); handleErr != nil {
+				err := ws.WriteJSON(&StreamWSMessageResponse{
+					Type:    WSMessageACK,
+					Status:  MessageStatusSuccess,
+					ErrCode: errors.MessageHandleError,
+					ErrMsg:  fmt.Sprintf("%s", handleErr),
+				})
+				if err != nil {
+					log.Errorf("failed to writing ack error message to ws connection: %v", err)
+					return
 				}
-			case ActionLeaveChatRoom:
-				if err := impl.LeaveChatRoom(ctx, topicID, subID); err != nil {
-					return errors.Errorf("failed to leave chat room %s", msgReq.RoomID)
-				}
-			case ActionChatRoomMessage:
-				if err := impl.PushMessage(ctx, msgReq.RoomID, userID, &msgReq); err != nil {
-					return errors.Errorf("failed to push chat message to chat room %s", msgReq.RoomID)
+			} else {
+				err := ws.WriteJSON(&StreamWSMessageResponse{
+					Type:   WSMessageACK,
+					Status: MessageStatusSuccess,
+				})
+				if err != nil {
+					log.Errorf("failed to writing ack success message to ws connection: %v", err)
+					return
 				}
 			}
 		}
 	}
+}
+
+// handleWebSocketStreamConnectMessage manage messages from the WebSocket client and route them to the appropriate handler.
+func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.Context, msgReq StreamWSMessageRequest, userID string, changeRoomCh chan changeRoomSub) error {
+	switch msgReq.Type {
+	case WSMessageTypeChatRoomAction:
+		var actionPayload ChatRoomActionRequest
+		if err := json.Unmarshal(msgReq.Payload, &actionPayload); err != nil {
+			return err
+		}
+		if actionPayload.RoomID == "" {
+			return errors.NewErrorf(errors.InvalidArgument, "empty chat room id")
+		}
+
+		topicID := stream.ConstructChatRoomTopicID(actionPayload.RoomID)
+		subID := stream.ConstructChatRoomSubscriptionID(actionPayload.RoomID, userID)
+
+		switch actionPayload.Action {
+		case ActionJoinChatRoom:
+			if sub, err := impl.JoinChatRoom(ctx, userID, actionPayload.RoomID, topicID, subID); err != nil {
+				return errors.Errorf("failed to join chat room %s", actionPayload.RoomID)
+			} else {
+				changeMsg := changeRoomSub{
+					roomID:       actionPayload.RoomID,
+					subscription: sub,
+					action:       ActionJoinChatRoom,
+				}
+				changeRoomCh <- changeMsg
+			}
+		case ActionLeaveChatRoom:
+			if err := impl.LeaveChatRoom(ctx, topicID, subID); err != nil {
+				return errors.Errorf("failed to leave chat room %s", actionPayload.RoomID)
+			}
+		}
+
+	case WSMessageTypeChat:
+		var chatMsgPayload ChatRoomMessageRequest
+		if err := json.Unmarshal(msgReq.Payload, &chatMsgPayload); err != nil {
+			return err
+		}
+		if chatMsgPayload.RoomID == "" {
+			return errors.NewErrorf(errors.InvalidArgument, "empty chat room id")
+		}
+
+		if err := impl.PushMessage(ctx, userID, &chatMsgPayload); err != nil {
+			return errors.Errorf("failed to push chat message to chat room %s", chatMsgPayload.RoomID)
+		}
+	}
+	return nil
 }
 
 func (impl *streamChatService) JoinChatRoom(ctx context.Context, userID, chatRoomID, topicID, subID string) (stream.Subscription, error) {
@@ -178,7 +207,7 @@ func (impl *streamChatService) LeaveChatRoom(ctx context.Context, topicID, subID
 	return nil
 }
 
-func (impl *streamChatService) PushMessage(ctx context.Context, chatroomID, userID string, msgReq *StreamChatRoomMessageRequest) error {
+func (impl *streamChatService) PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequest) error {
 	// send the new message to redis stream
 	id, err := impl.idGenerator.NextID()
 	if err != nil {
@@ -187,13 +216,12 @@ func (impl *streamChatService) PushMessage(ctx context.Context, chatroomID, user
 	sID := fmt.Sprintf("%d", id)
 	// TODO: save message in db
 
-	msgReq.SenderID = userID
 	msgReq.ID = sID
 	streamMsg := &stream.Message{
 		ID:         sID,
-		Attributes: msgReq.convertToKeyValuePairs(),
+		Attributes: msgReq.convertToKeyValuePairs(userID),
 	}
-	topicID := stream.ConstructChatRoomTopicID(chatroomID)
+	topicID := stream.ConstructChatRoomTopicID(msgReq.RoomID)
 	if res := impl.streamClient.Topic(topicID).Send(ctx, streamMsg); res.Get(ctx) != nil {
 		return errors.Errorf("failed to send message %+v to stream topic: %v", streamMsg, err)
 	}
@@ -202,13 +230,21 @@ func (impl *streamChatService) PushMessage(ctx context.Context, chatroomID, user
 
 func (impl *streamChatService) receiveMessages(ctx context.Context, conn *websocket.Conn, subCh chan changeRoomSub, userID string) error {
 	h := func(ctx context.Context, msg *stream.Message) {
-		resp := &StreamChatRoomMessageResponse{}
-		if err := resp.convertFromKeyValuePairs(msg.Attributes); err != nil {
+		payload := &ChatRoomMessageResponse{}
+		if err := payload.convertFromKeyValuePairs(msg.Attributes); err != nil {
 			log.Errorf("failed to convert stream data to StreamChatRoomResponse: %v", err)
 			return
 		}
-		resp.SenderName = resp.SenderID // TODO: replace with real user name
-		err := conn.WriteJSON(resp)
+		content, err := json.Marshal(payload)
+		if err != nil {
+			log.Errorf("failed to marshal message payload: %v", err)
+			return
+		}
+		resp := &StreamWSMessageResponse{
+			Type:    WSMessageTypeChatStream,
+			Payload: content,
+		}
+		err = conn.WriteJSON(resp)
 		if err != nil {
 			log.Errorf("failed to writing message to ws connection: %v", err)
 			return

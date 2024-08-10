@@ -37,7 +37,7 @@ type Chat struct {
 }
 
 var (
-	upgrader = websocket.Upgrader{
+	Upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
@@ -49,7 +49,7 @@ var (
 // ServeWS upgrade http connection to a WebSocket and register client
 func ServeWS(w http.ResponseWriter, r *http.Request) {
 	// Upgrade initial http request to a WebSocket
-	ws, err := upgrader.Upgrade(w, r, nil)
+	ws, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Errorf("Error upgrading connection: %v\n", err)
 		return
