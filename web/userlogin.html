@@ -88,6 +88,12 @@
 </div>
 
 <script>
+    // const hostName = `http://localhost:8080`
+    const hostName = `http://gsm-dev`
+
+    const createUserURL = hostName + "/api/account/v1/user"
+    const loginURL = hostName + "/api/account/v1/auth/login"
+
     function showForm(form) {
         document.getElementById('registerFormContainer').classList.remove('active');
         document.getElementById('loginFormContainer').classList.remove('active');
@@ -106,12 +112,12 @@
         const password = document.getElementById('registerPassword').value;
 
         try {
-            const response = await fetch('http://localhost:8080/api/account/v1/user', {
+            const response = await fetch(createUserURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ Name: name, Email: email, Password: password })
+                body: JSON.stringify({ name: name, email: email, password: password })
             });
 
             if (!response.ok) {
@@ -132,12 +138,12 @@
         const password = document.getElementById('loginPassword').value;
 
         try {
-            const response = await fetch('http://localhost:8080/api/account/v1/auth/login', {
+            const response = await fetch(loginURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ Email: email, Password: password })
+                body: JSON.stringify({ email: email, password: password })
             });
 
             const result = await response.json();

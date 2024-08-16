@@ -37,9 +37,9 @@ func NewAccountController(redisClient cache.Client, mongodb *mongo.Client, dbKey
 }
 
 type CreateUserRequest struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type CreateUserResponse struct {
@@ -88,8 +88,8 @@ func (impl *accountController) CreateUser(ctx *gin.Context) {
 }
 
 type LoginRequest struct {
-	Email    string
-	Password string
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type LoginResponse struct {

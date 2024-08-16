@@ -49,7 +49,54 @@ docker-compose down
 docker-compose down --volumes
 # Down and remove images
 docker-compose down --rmi <all|local>
+# restart a specific container in a Docker Compose
+docker-compose restart <service_name>
+
+
+
+[How to Find Default Nginx Document Root Directory Location?](https://www.uptimia.com/questions/find-default-nginx-document-root-directory-location)
+
+```sh
+
+# reload nginx
+docker exec -it gsm_nginx nginx -s reload
+
+# see nginx applied setting
+docker exec -it gsm_nginx cat /etc/nginx/nginx.config
+docker exec -it gsm_nginx ls -l /var/www
+docker exec -it gsm_nginx nginx -t
+
+# see the nginx indeed applied setting
+docker exec -it gsm_nginx nginx -T 
+# sees if root setting is updated
+docker exec -it gsm_nginx nginx -T | grep root
+
+# inspect the active NGINX configuration 
+docker exec -it gsm_nginx nginx -T | grep "nginx.conf"
+
+
+# 1. Verify Configuration File Location
+# Double-check the exact path of the configuration file being used by NGINX inside the container. The configuration might be split across multiple files or directories.
+# Look for include directives in the output to find any additional configuration files that might be overriding your changes.
+
+docker exec -it gsm_nginx nginx -T | grep include
+
+include  /etc/nginx/mime.types;
+include /etc/nginx/conf.d/*.conf;
+#    include        fastcgi_params;
+
+
+# 2. Check for Multiple Configuration Files
+# NGINX can include other configuration files, which might be overriding your settings. Look in common locations like /etc/nginx/conf.d/ or /etc/nginx/sites-enabled/.
+docker exec -it gsm_nginx ls /etc/nginx/conf.d/
+docker exec -it gsm_nginx ls /etc/nginx/sites-enabled/
 ```
+
+
+The issue might be due to a small typo in the path where you’re mounting your NGINX configuration file. The correct path should be /etc/nginx/nginx.conf, not /etc/nginx/nginx.config. NGINX expects its main configuration file to be named nginx.conf.
+
+
+
 
 ### mino
 webUI: http://127.0.0.1:9001
@@ -112,6 +159,8 @@ nvm install v17.9.1
 
 ### Golang
 [Cannot do any go command anymore](https://stackoverflow.com/questions/60406755/cannot-do-any-go-command-anymore)
+[compile: version "go1.16.2" does not match go tool version "go1.15.8" #107](https://github.com/actions/setup-go/issues/107)
+[Golang VSCode 開發環境建置 - 手把手教學](https://myapollo.com.tw/blog/golang-vscode/)
 
 
 [cmd/go: go mod download breaks on 1.21.0 due to empty GOPROXY](https://github.com/golang/go/issues/61928)
@@ -183,3 +232,23 @@ https://stackoverflow.com/questions/48712923/where-to-store-a-jwt-token-properly
 When upgrading an HTTP connection to a WebSocket, the initial HTTP request can include query parameters, which are typically used for authentication or passing configuration details. These query parameters are included in the HTTP GET request used to initiate the WebSocket handshake.
 
 However, these query parameters are only available during the initial upgrade request. Once the connection is upgraded to a WebSocket, it becomes a stateful, full-duplex connection where messages are sent and received as binary or text frames. The concept of query parameters doesn't directly apply to the messages sent over this connectio
+
+
+## Nginx
+```sh
+root@5a10dafe097b:/# curl -v http://account:8080/api/account/v1/healthz
+alive!
+
+curl -v http://gsm-dev/api/account/v1/healthz
+
+root@5a10dafe097b:/# curl -v http://realtime:8081/api/realtime/v1/healthz
+root@5a10dafe097b:/# nginx -t
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+https://github.com/docker/compose/issues/3412
+https://stackoverflow.com/questions/35744650/docker-network-nginx-resolver
+https://forums.docker.com/t/nginx-swarm-redeploy-timeouts/68904/4
+
+https://docs.docker.com/engine/network/

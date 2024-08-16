@@ -84,7 +84,7 @@
 
 <div class="chat-container">
     <h2>Chat Room</h2>
-    <p><a href="index.html">Home</a></p>
+    <p><a href="/index.html">Home</a></p>
     <div id="currentRoomId"></div>
     <input type="text" id="chatRoomId" placeholder="Enter chat room ID">
     <button onclick="joinChatRoom()">Join Room</button>
@@ -103,6 +103,9 @@
 </html>
 
 <script>
+    // const hostName = `ws://localhost:8081`
+    const hostName = `ws://gsm-dev`
+
     const statusDiv = document.getElementById('status');
     let socket;
     let currentRoomId;
@@ -114,7 +117,8 @@
             displayError('WebSocket error: user not login');
             return;
         }
-        const url = `ws://localhost:8081/api/realtime/v1/chatroom/stream?&access_token=${encodedToken}`
+        const url = hostName + `/api/realtime/v1/chatroom/stream?&access_token=${encodedToken}`
+
         socket = new WebSocket(url);
 
         socket.onopen = function () {

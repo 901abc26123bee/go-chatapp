@@ -9,6 +9,8 @@
     <title>Join Default Chat Room</title>
 </head>
 <body>
+    <div id="status">Disconnected</div>
+
     <div>
         <input id="username" type="text" placeholder="Enter your username">
         <button onclick="joinChat()">Join Chat</button>
@@ -20,6 +22,9 @@
     </div>
 
     <script>
+        // const hostName = `ws://localhost:8081`
+        const hostName = `ws://gsm-dev`
+
         let socket;
         let username;
         const token = sessionStorage.getItem('access-token');
@@ -42,7 +47,8 @@
                 console.log('user not login');
             }
             const encodedToken = encodeURIComponent(token);
-            const url = `ws://localhost:8081/api/realtime/v1/chatroom/ws?&access_token=${encodedToken}`;
+            const url = hostName + `/api/realtime/v1/chatroom/ws?&access_token=${encodedToken}`;
+
             socket = new WebSocket(url);
             socket.onopen = () => {
                 console.log('WebSocket connection opened');
@@ -71,6 +77,14 @@
             socket.send(JSON.stringify({username: username, message: message}));
             messageInput.value = "";
         }
+
+        function updateStatus(status) {
+            const statusDiv = document.getElementById('status');
+
+            statusDiv.textContent = status;
+            statusDiv.style.color = status === 'Connected' ? 'green' : 'red';
+        }
+
     </script>
 </body>
 </html>
