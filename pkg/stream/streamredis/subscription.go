@@ -51,7 +51,7 @@ func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context,
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("context canceled for subscription %s for topic %s", s.xGroupID, s.topicID)
+			log.Infof("context canceled for subscription %s for topic %s: %v", s.xGroupID, s.topicID, ctx.Err())
 			return nil
 		case <-stopChan:
 			log.Infof("receive stop signal in subscription %s for topic %s", s.xGroupID, s.topicID)
@@ -88,6 +88,13 @@ func (s *redisSubscription) Receive(ctx context.Context, f func(context.Context,
 func (s *redisSubscription) GetSubID() string {
 	if s != nil {
 		return s.xGroupID
+	}
+	return ""
+}
+
+func (s *redisSubscription) GetTopicID() string {
+	if s != nil {
+		return s.topicID
 	}
 	return ""
 }

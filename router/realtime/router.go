@@ -66,6 +66,9 @@ func NewRouter(config RouterConfig) (*RealtimeRouter, error) {
 	// Start listening for incoming chat messages(for testing)
 	go realtimeutil.Broadcaster()
 
+	// Start a goroutine to log goroutine count
+	// go monitor.LogGoroutineCount(context.Background(), 10*time.Second,  "realtime")
+
 	r := gin.Default()
 
 	// TODO: do not allow *

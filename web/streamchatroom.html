@@ -119,9 +119,16 @@
         }
         const url = hostName + `/api/realtime/v1/chatroom/stream?&access_token=${encodedToken}`
 
+        const timeout = setTimeout(() => {
+            if (socket.readyState !== WebSocket.OPEN) {
+                socket.close();
+                console.error("WebSocket connection timed out");
+            }
+        }, 36000000); // 10min
         socket = new WebSocket(url);
 
         socket.onopen = function () {
+            clearTimeout(timeout); // Clear timeout once connected
             console.log('WebSocket connection opened.');
             updateStatus('Connected');
         };
@@ -154,6 +161,7 @@
                     room_id: chatRoomId,
                 }
             });
+            console.log("joinChatRoom", joinMessage)
             socket.send(joinMessage);
             document.getElementById('chatBox').innerHTML = '';
             displayError('');
@@ -178,6 +186,7 @@
                     room_id: chatRoomId,
                 }
             });
+            console.log("leaveChatRoom", leaveMessage)
             socket.send(leaveMessage);
             document.getElementById('chatBox').innerHTML = '';
             displayError('');
@@ -194,6 +203,8 @@
             displayError('Please join a chat room and enter a message.');
             return;
         }
+        console.log("currentRoomId",currentRoomId)
+
         if (socket && socket.readyState === WebSocket.OPEN) {
             const chatMessage = JSON.stringify({
                 type: "CHAT",
@@ -203,6 +214,7 @@
                     chat: message
                 }
             });
+            console.log("sendMessage", chatMessage)
             socket.send(chatMessage);
             document.getElementById('message').value = '';
         } else {

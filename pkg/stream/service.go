@@ -3,8 +3,8 @@ package stream
 import "fmt"
 
 // ConstructChatRoomSubscriptionID construct subscription group id for customer
-func ConstructChatRoomSubscriptionID(chatroomID, userID string) string {
-	return fmt.Sprintf("streamSubscription:%s:%s", chatroomID, userID)
+func ConstructChatRoomSubscriptionID(chatroomID, userID, connectionIP string) string {
+	return fmt.Sprintf("streamSubscription:%s:%s:%s", chatroomID, userID, connectionIP)
 }
 
 // ConstructChatRoomTopicID construct topic stream for chatroom

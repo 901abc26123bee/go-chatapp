@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"gsm/pkg/errors"
+	"gsm/pkg/util/convert"
 	"io"
 	"strings"
 	"time"
@@ -52,8 +53,8 @@ func LoggerHandler() gin.HandlerFunc {
 		errMsg := ctx.Errors.ByType(gin.ErrorTypePrivate).String()
 		fields := log.Fields{
 			"request-header": ctx.Request.Header,
-			"request-body":   formatJsonString(string(requestBodyBytes)),
-			"response-body":  formatJsonString(rw.body.String()),
+			"request-body":   convert.FormatJsonString(string(requestBodyBytes)),
+			"response-body":  convert.FormatJsonString(rw.body.String()),
 			"elapsed":        elapsed,
 			"status-code":    ctx.Writer.Status(),
 		}
@@ -66,8 +67,4 @@ func LoggerHandler() gin.HandlerFunc {
 		entry := log.WithFields(fields)
 		entry.Errorf("[%s] latency: %v, failed", reqLine, elapsed)
 	}
-}
-
-func formatJsonString(s string) string {
-	return strings.ReplaceAll(s, "\"", "")
 }

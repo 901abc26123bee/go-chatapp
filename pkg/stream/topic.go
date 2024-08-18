@@ -10,10 +10,12 @@ type Topic interface {
 	Exists(ctx context.Context) (bool, error)
 	// Send publishes msg to the topic asynchronously.
 	Send(ctx context.Context, msg *Message) PublishResult
+	// GetSubScriptions get all subscription match given prefix for topic
+	GetSubScriptions(ctx context.Context, prefix string) ([]string, error)
 }
 
 // A PublishResult holds the result from a call to Publish.
 type PublishResult interface {
 	// Get returns the error result of a Publish call.
-	Get(ctx context.Context) error
+	Err(ctx context.Context) error
 }

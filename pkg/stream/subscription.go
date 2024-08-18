@@ -10,4 +10,6 @@ type Subscription interface {
 	Receive(ctx context.Context, f func(context.Context, *Message), stopChan chan struct{}) error
 	// get sub id
 	GetSubID() string
+	// get topic id
+	GetTopicID() string
 }
