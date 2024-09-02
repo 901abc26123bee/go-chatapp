@@ -252,3 +252,14 @@ https://stackoverflow.com/questions/35744650/docker-network-nginx-resolver
 https://forums.docker.com/t/nginx-swarm-redeploy-timeouts/68904/4
 
 https://docs.docker.com/engine/network/
+
+
+
+join
+{"type":"CHAT_ROOM_ACTION","payload":{"action":"JOIN_CHAT_ROOM","room_id":"test1"}}
+
+chat
+{"type":"CHAT","payload":{"room_id":"test1","action":"CHAT_ROOM_MESSAGE","chat":"hhh"}}
+
+leave
+{"type":"CHAT_ROOM_ACTION","payload":{"action":"LEAVE_CHAT_ROOM","room_id":"test1"}}

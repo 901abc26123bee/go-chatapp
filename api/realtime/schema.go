@@ -45,19 +45,19 @@ type StreamWSMessageResponse struct {
 	Payload json.RawMessage `json:"payload"` // Allows for flexible payloads
 }
 
-// ChatRoomMessageResponse defines a chat room message response
-type ChatRoomMessageResponse struct {
+// ChatRoomMessageResponsePayload defines a chat room message response
+type ChatRoomMessageResponsePayload struct {
 	ID       uint64 `json:"id"`
 	RoomID   string `json:"room_id"`
 	Chat     string `json:"chat"`
 	SenderID string `json:"sender_id"`
 }
 
-// ChatRoomActionResponse defines a chat room action response
-type ChatRoomActionResponse struct {
+// ChatRoomActionResponsePayload defines a chat room action response
+type ChatRoomActionResponsePayload struct {
 }
 
-func (resp *ChatRoomMessageResponse) convertFromKeyValuePairs(attr map[string]interface{}) error {
+func (resp *ChatRoomMessageResponsePayload) convertFromKeyValuePairs(attr map[string]interface{}) error {
 	if resp == nil {
 		return fmt.Errorf("mapping struct should not be nil")
 	}
@@ -88,18 +88,18 @@ type StreamWSMessageRequest struct {
 	Payload json.RawMessage `json:"payload"` // Allows for flexible payloads
 }
 
-type ChatRoomMessageRequest struct {
+type ChatRoomMessageRequestPayLoad struct {
 	ID     string `json:"id"`
 	RoomID string `json:"room_id"`
 	Chat   string `json:"chat"`
 }
 
-type ChatRoomActionRequest struct {
+type ChatRoomActionRequestPayload struct {
 	Action ChatRoomAction `json:"action"`
 	RoomID string         `json:"room_id"`
 }
 
-func (msg *ChatRoomMessageRequest) convertToKeyValuePairs(userID string) map[string]interface{} {
+func (msg *ChatRoomMessageRequestPayLoad) convertToKeyValuePairs(userID string) map[string]interface{} {
 	return map[string]interface{}{
 		"id":        msg.ID,
 		"room_id":   msg.RoomID,

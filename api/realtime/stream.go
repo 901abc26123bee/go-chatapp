@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -27,8 +28,9 @@ type streamChatService struct {
 // StreamChatService defines the connect service interface
 type StreamChatService interface {
 	HandleWebSocketStreamConnect(userID string, r *http.Request, w http.ResponseWriter)
-	JoinChatRoom(ctx context.Context, userID, chatRoomID, topicID, subID string) (stream.Subscription, error)
-	PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequest, clientRespCh chan *StreamWSMessageResponse) error
+	WriteRespToWS(ctx context.Context, conn *websocket.Conn, clientRespCh chan *StreamWSMessageResponse) error
+	CollectMsgFromSubs(ctx context.Context, changeRoomCh chan changeRoomSub, userID string, clientRespCh chan *StreamWSMessageResponse) error
+	PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequestPayLoad, clientRespCh chan *StreamWSMessageResponse) error
 }
 
 // NewStreamChatService init the connect service
@@ -52,34 +54,54 @@ func (impl *streamChatService) HandleWebSocketStreamConnect(userID string, r *ht
 		log.Errorf("failed to upgrade connection to websocket: %v", err)
 	}
 	remoteIP := ws.RemoteAddr().String()
+
 	defer func() {
 		ws.Close()
 		log.Infof("HandleWebSocketStreamConnect fo connection %s is stopped", remoteIP)
 	}()
 	log.Infof("HandleWebSocketStreamConnect fo connection %s is started", remoteIP)
 
-	ctx, cancel := context.WithCancel(r.Context())
+	// Set a read/write deadline to periodically check for client disconnections
+	if err := ws.SetReadDeadline(time.Now().Add(120 * time.Second)); err != nil {
+		log.Errorf("failed to set SetReadDeadline: %v", err)
+	}
+	if err := ws.SetWriteDeadline(time.Now().Add(120 * time.Second)); err != nil {
+		log.Errorf("failed to set SetWriteDeadline: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel() // Ensure that the context is cancelled when main exits
 
 	// handle receiving message from chat room
-	changeRoomCh := make(chan changeRoomSub)
-	clientRespCh := make(chan *StreamWSMessageResponse)
+	changeRoomCh := make(chan changeRoomSub, 100)
+	clientRespCh := make(chan *StreamWSMessageResponse, 100)
+	closeCh := make(chan struct{})
+
 	go func() {
-		log.Infof("collectMsgFromSubs for connection %s is started", remoteIP)
-		impl.collectMsgFromSubs(ctx, changeRoomCh, userID, clientRespCh)
-		log.Infof("collectMsgFromSubs for connection %s is stopped", remoteIP)
+		log.Infof("CollectMsgFromSubs for connection %s is started", remoteIP)
+		if err := impl.CollectMsgFromSubs(ctx, changeRoomCh, userID, clientRespCh); err != nil {
+			log.Errorf("failed to CollectMsgFromSubs: %v", err)
+		}
+		closeCh <- struct{}{}
+		log.Infof("CollectMsgFromSubs for connection %s is stopped", remoteIP)
 	}()
 	go func() {
-		log.Infof("writeRespToWS for connection %s is started", remoteIP)
-		impl.writeRespToWS(ctx, ws, clientRespCh)
-		log.Infof("writeRespToWS for connection %s is stopped", remoteIP)
+		log.Infof("WriteRespToWS for connection %s is started", remoteIP)
+		if err := impl.WriteRespToWS(ctx, ws, clientRespCh); err != nil {
+			log.Errorf("failed to WriteRespToWS: %v", err)
+		}
+		closeCh <- struct{}{}
+		log.Infof("WriteRespToWS for connection %s is stopped", remoteIP)
 	}()
 
-	// handle message request
+	// handle message request from ws
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("context canceled in HandleWebSocketStreamConnect, reason: %v", ctx.Err())
+			log.Errorf("context canceled in HandleWebSocketStreamConnect, reason: %v", ctx.Err())
+			return
+		case <-closeCh:
+			log.Errorf("HandleWebSocketStreamConnect is stopped")
 			return
 		default:
 			// parse client message request.
@@ -93,12 +115,16 @@ func (impl *streamChatService) HandleWebSocketStreamConnect(userID string, r *ht
 					websocket.CloseNoStatusReceived) {
 					log.Info("ws connection is closed by client")
 				}
+				if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					log.Info("ws connection is unexpected closed")
+				}
 				log.Errorf("failed to read message from ws client: %v", err)
 				return
 			}
 
 			// handle messages from the WebSocket client and route them to the appropriate handler.
 			if handleErr := impl.handleWebSocketStreamConnectMessage(ctx, msgReq, userID, changeRoomCh, remoteIP, clientRespCh); handleErr != nil {
+				log.Errorf("failed to handleWebSocketStreamConnectMessage: %v", err)
 				return
 			}
 		}
@@ -109,9 +135,9 @@ func (impl *streamChatService) HandleWebSocketStreamConnect(userID string, r *ht
 func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.Context, msgReq StreamWSMessageRequest, userID string, changeRoomCh chan changeRoomSub, remoteIP string, clientRespCh chan *StreamWSMessageResponse) error {
 	switch msgReq.Type {
 	case WSMessageTypeChatRoomAction:
-		var actionPayload ChatRoomActionRequest
+		var actionPayload ChatRoomActionRequestPayload
 		if err := json.Unmarshal(msgReq.Payload, &actionPayload); err != nil {
-			return errors.Errorf("failed to Unmarshal payload to ChatRoomActionRequest: %v", err)
+			return errors.Errorf("failed to Unmarshal payload to ChatRoomActionRequestPayload: %v", err)
 		}
 		if actionPayload.RoomID == "" {
 			return errors.NewErrorf(errors.InvalidArgument, "empty chat room id")
@@ -123,7 +149,7 @@ func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.C
 
 		switch actionPayload.Action {
 		case ActionJoinChatRoom:
-			if sub, err := impl.JoinChatRoom(ctx, userID, actionPayload.RoomID, topicID, subID); err != nil {
+			if sub, err := impl.joinChatRoom(ctx, userID, actionPayload.RoomID, topicID, subID); err != nil {
 				return errors.Errorf("failed to join chat room %s", actionPayload.RoomID)
 			} else {
 				changeMsg := changeRoomSub{
@@ -144,10 +170,12 @@ func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.C
 				action:       ActionLeaveChatRoom,
 			}
 			changeRoomCh <- changeMsg
+		default:
+			return errors.Errorf("invalid action enum: %s", actionPayload.RoomID)
 		}
 
 	case WSMessageTypeChat:
-		var chatMsgPayload ChatRoomMessageRequest
+		var chatMsgPayload ChatRoomMessageRequestPayLoad
 		if err := json.Unmarshal(msgReq.Payload, &chatMsgPayload); err != nil {
 			return err
 		}
@@ -165,7 +193,7 @@ func (impl *streamChatService) handleWebSocketStreamConnectMessage(ctx context.C
 	return nil
 }
 
-func (impl *streamChatService) JoinChatRoom(ctx context.Context, userID, chatRoomID, topicID, subID string) (stream.Subscription, error) {
+func (impl *streamChatService) joinChatRoom(ctx context.Context, userID, chatRoomID, topicID, subID string) (stream.Subscription, error) {
 	// TODO: remove when CreateChatRoom is implemented
 	// create stream topic if not exist
 	topic := impl.streamClient.Topic(topicID)
@@ -203,7 +231,7 @@ func (impl *streamChatService) JoinChatRoom(ctx context.Context, userID, chatRoo
 	return subscription, nil
 }
 
-func (impl *streamChatService) PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequest, clientRespCh chan *StreamWSMessageResponse) error {
+func (impl *streamChatService) PushMessage(ctx context.Context, userID string, msgReq *ChatRoomMessageRequestPayLoad, clientRespCh chan *StreamWSMessageResponse) error {
 	// TODO: get id from id producer center
 	// send the new message to redis stream
 	id, err := impl.idGenerator.NextID()
@@ -240,25 +268,23 @@ func (impl *streamChatService) PushMessage(ctx context.Context, userID string, m
 	return nil
 }
 
-func (impl *streamChatService) writeRespToWS(ctx context.Context, conn *websocket.Conn, clientRespCh chan *StreamWSMessageResponse) {
+func (impl *streamChatService) WriteRespToWS(ctx context.Context, conn *websocket.Conn, clientRespCh chan *StreamWSMessageResponse) error {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Infof("context canceled in writeRespToWS, reason: %v", ctx.Err())
-			return
+			return errors.Errorf("context canceled in WriteRespToWS, reason: %v", ctx.Err())
 		case resp := <-clientRespCh:
 			if err := conn.WriteJSON(resp); err != nil {
-				log.Errorf("failed to writing message to ws client with address %s: %v", conn.RemoteAddr().String(), err)
-				return
+				return errors.Errorf("failed to writing message to ws client with address %s: %v", conn.RemoteAddr().String(), err)
 			}
 			log.Infof("successfully sending message to ws client with address %s , type %s, status %s, payload %+v", conn.RemoteAddr().String(), resp.Type, resp.Status, convert.FormatJsonString(string(resp.Payload)))
 		}
 	}
 }
 
-func (impl *streamChatService) collectMsgFromSubs(ctx context.Context, changeRoomCh chan changeRoomSub, userID string, clientRespCh chan *StreamWSMessageResponse) error {
+func (impl *streamChatService) CollectMsgFromSubs(ctx context.Context, changeRoomCh chan changeRoomSub, userID string, clientRespCh chan *StreamWSMessageResponse) error {
 	h := func(ctx context.Context, msg *stream.Message) {
-		payload := &ChatRoomMessageResponse{}
+		payload := &ChatRoomMessageResponsePayload{}
 		if err := payload.convertFromKeyValuePairs(msg.Attributes); err != nil {
 			log.Errorf("failed to convert stream data to StreamChatRoomResponse: %v", err)
 			return
@@ -276,25 +302,26 @@ func (impl *streamChatService) collectMsgFromSubs(ctx context.Context, changeRoo
 	}
 
 	connSubHistory := make(map[string]map[stream.Subscription]chan struct{}) // [subscription id]:[stream subscription]:[stop chan struct{} for stopping the subscription]
+	defer func() {
+		// handle connection closure, e.g., close subscriptions
+		for _, subMap := range connSubHistory {
+			for sub, ch := range subMap {
+				// signal all subscription to stop
+				ch <- struct{}{}
+				// delete subscription
+				if err := impl.streamClient.DeleteSubscription(ctx, sub.GetTopicID(), sub.GetSubID()); err != nil {
+					log.Errorf("failed to delete subscription %s: %v", sub.GetSubID(), err)
+				}
+				log.Infof("successfully delete subscription %s", sub.GetSubID())
+			}
+		}
+	}()
 
 	var curSub stream.Subscription
 	for {
 		select {
 		case <-ctx.Done():
-			// handle connection closure, e.g., close subscriptions
-			for _, subMap := range connSubHistory {
-				for sub, ch := range subMap {
-					// signal all subscription to stop
-					ch <- struct{}{}
-					// delete subscription
-					if err := impl.streamClient.DeleteSubscription(ctx, sub.GetTopicID(), sub.GetSubID()); err != nil {
-						return errors.Errorf("failed to delete subscription %s: %v", sub.GetSubID(), err)
-					}
-					log.Infof("successfully delete subscription %s", sub.GetSubID())
-				}
-			}
-			log.Infof("context canceled in collectMsgFromSubs, reason: %v", ctx.Err())
-			return nil
+			return errors.Errorf("context canceled in CollectMsgFromSubs, reason: %v", ctx.Err())
 		case subMsg := <-changeRoomCh:
 			// skip invalid subMsg
 			if subMsg.subscription == nil {
@@ -305,13 +332,12 @@ func (impl *streamChatService) collectMsgFromSubs(ctx context.Context, changeRoo
 			switch subMsg.action {
 			case ActionJoinChatRoom:
 				// record message subID into connSubscriptions history
-				var stopCh chan struct{}
+				stopSubCh := make(chan struct{}, 10)
 				if _, ok := connSubHistory[msgSubID]; !ok {
 					connSubHistory[msgSubID] = make(map[stream.Subscription]chan struct{})
-					stopCh = make(chan struct{})
-					connSubHistory[msgSubID][subMsg.subscription] = stopCh
+					connSubHistory[msgSubID][subMsg.subscription] = stopSubCh
 				} else {
-					stopCh = connSubHistory[msgSubID][subMsg.subscription]
+					stopSubCh = connSubHistory[msgSubID][subMsg.subscription]
 				}
 
 				// stop curSub before subscribe to other chat room to avoid panic due to occurrence write to ws connect
@@ -332,17 +358,20 @@ func (impl *streamChatService) collectMsgFromSubs(ctx context.Context, changeRoo
 
 				// receiving message from selected chat room
 				curSub = subMsg.subscription
-				if err := curSub.Receive(ctx, h, stopCh); err != nil {
-					return errors.Errorf("failed to receive message from stream subscription: %v", err)
-				}
+				go func() {
+					if err := curSub.Receive(ctx, h, stopSubCh); err != nil {
+						log.Errorf("failed to receive message from stream subscription: %v", err)
+					}
+					log.Infof("stop receiving message from subscription %s from topic %s", curSub.GetSubID(), curSub.GetTopicID())
+				}()
 			case ActionLeaveChatRoom:
 				if curSub == nil || curSub.GetSubID() != msgSubID {
-					log.Errorf("message with action leave chat room doesn't match current chat room")
+					return errors.Errorf("message with action leave chat room doesn't match current chat room")
 				} else {
 					if subInfo, ok := connSubHistory[msgSubID]; ok {
-						for _, ch := range subInfo {
+						for _, stopSubCh := range subInfo {
 							// signal subscription to stop
-							ch <- struct{}{}
+							stopSubCh <- struct{}{}
 						}
 					}
 				}
