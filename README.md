@@ -70,4 +70,4 @@ Endpoint: `ws://gsm-dev/api/realtime/v1/chatroom/stream?access_token=${encodedTo
 
 ## Display
 
-[![Watch the video](./static/video/go-chat-room-display-720p.mov)](./static/video/go-chat-room-display-720p.mp4)
+[![Watch the video](./static/video/go-chat-room-display-720p.gif)](./static/video/go-chat-room-display-720p.gif)
